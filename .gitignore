@@ -1,0 +1,6 @@
+compile_commands.json
+app
+.cache/
+build/
+libnanovg.a
+fonts/
