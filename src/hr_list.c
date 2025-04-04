@@ -4,12 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void init_horizontal_list(HorizontalList *hr_list) {
-    // hr_list->anim.offset = 0;
-    // hr_list->anim.target_offset = 0;
-}
+void init_horizontal_list(HorizontalList *hr_list) {}
 
-void update_horizontal_list(HorizontalList *hr_list, float anim_factor) {
+void update_horizontal_list(HorizontalList *hr_list) {
     float offset = 150;
 
     AnimatedProperty anim;
@@ -62,6 +59,7 @@ void draw_horizontal_menu(NVGcontext *vg, HorizontalList *hr_list, int x, int y)
     }
 
     for (int i = 0; i < hr_list->items_count; i++) {
+        float size = 50;
         float x = base_x + (i * gap);
 
         // Calculate dynamic scale based on proximity to selected item
@@ -72,7 +70,7 @@ void draw_horizontal_menu(NVGcontext *vg, HorizontalList *hr_list, int x, int y)
         }
 
         float opacity = 1.0;
-        // size *= scale_factor;
+        size *= scale_factor;
 
         // Draw category icon (simplified as circle)
         NVGcolor icon_color = nvgRGBAf(1.0f, 1.0f, 1.0f, opacity);

@@ -125,20 +125,6 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
     }
 }
 
-// Animation update function
-void update_animations(double delta_time) {
-    // Limit delta time to avoid large jumps
-    if (delta_time > 0.1f)
-        delta_time = 0.1f;
-
-    float TRANSITION_SPEED = 0.4f; // Lower is faster
-
-    // Calculate animation speed factor
-    float anim_factor = 1.0f - powf(TRANSITION_SPEED, delta_time * 60.0f);
-
-    update_horizontal_list(&hr_list, anim_factor);
-}
-
 // Initialization of menu data
 void initialize_menu_data() {
     const char *homedir;
@@ -333,28 +319,18 @@ int main() {
         return -1;
     }
 
-    glfwSetTime(0);
+    // glfwSetTime(0);
     glfwSwapInterval(1);
 
     // Initialize menu data
     srand(time(NULL));
     initialize_menu_data();
 
-    // Initialize timing
-    double last_time = 0;
-    last_time = glfwGetTime();
-
     // Main loop
     while (!glfwWindowShouldClose(window)) {
         float current_time = glfwGetTime();
-        float delta_time = (float)(current_time - last_time);
 
-        // Update animations
-        update_animations(delta_time);
-
-        gfx_animation_update(current_time * 1.5);
-
-        last_time = current_time;
+        gfx_animation_update(current_time);
 
         // Clear screen
         glClear(GL_COLOR_BUFFER_BIT);
@@ -363,6 +339,7 @@ int main() {
         vr_list.items_count = fm->current_dir->child_count;
 
         selection_pointer_changed(&vr_list);
+        update_horizontal_list(&hr_list);
 
         // Render menu
         render(window, vg);
