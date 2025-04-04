@@ -1,6 +1,5 @@
 #include "animation.h"
 #include "fm.h"
-#include "typedef.h"
 #include <GL/glew.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +25,7 @@ typedef struct {
 } State;
 
 State state = {0};
-HrItem horizontalItems[MAX_CATEGORIES];
+HrItem horizontalItems[10];
 
 FileManager *fm;
 VerticalList vr_list;
@@ -57,9 +56,14 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         glfwSetWindowShouldClose(window, GL_TRUE);
         return;
     case GLFW_KEY_LEFT:
+        if (state.depth > 0) {
+            return;
+        }
         if (hr_list.selected > 0) {
             hr_list.selected--;
-            hr_list.anim.target_offset = hr_list.selected * 150.0f;
+            while (fm->history_pos != 0)
+                go_back(fm);
+            state.depth = 0;
 
             change_directory(fm, horizontalItems[hr_list.selected].path);
 
@@ -67,9 +71,15 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         }
         break;
     case GLFW_KEY_RIGHT:
-        if (hr_list.selected < hr_list.category_count - 1) {
+        if (state.depth > 0) {
+            return;
+        }
+        if (hr_list.selected < hr_list.items_count - 1) {
             hr_list.selected++;
-            hr_list.anim.target_offset = hr_list.selected * 150.0f;
+            while (fm->history_pos != 0)
+                go_back(fm);
+            state.depth = 0;
+
             change_directory(fm, horizontalItems[hr_list.selected].path);
 
             vr_list.selected = 0;
@@ -89,6 +99,9 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         if (state.depth == 0)
             return;
         state.depth--;
+        if (state.depth == 0) {
+            hr_list.depth = 0;
+        }
         go_back(fm);
         vr_list.selected = 0;
         break;
@@ -97,6 +110,8 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         if (current->type == TYPE_DIRECTORY) {
             printf("NAVIGATE: %s\n", current->name);
             state.depth++;
+
+            hr_list.depth = 1;
             change_directory(fm, current->path);
             vr_list.selected = 0;
         } else if (current->type == TYPE_FILE) {
@@ -178,7 +193,7 @@ void initialize_menu_data() {
     // Initialize animation state
     init_horizontal_list(&hr_list);
     hr_list.items = horizontalItems;
-    hr_list.category_count = 8;
+    hr_list.items_count = 8;
 
     // vr
     vr_list.above_subitem_offset = 0.0f;
@@ -243,27 +258,25 @@ void render(GLFWwindow *window, NVGcontext *vg) {
     // Draw background
     draw_background(vg);
 
+    if (hr_list.depth > 0) {
+        float x = 200;
+        nvgFontSize(vg, 12);
+        nvgFontFace(vg, "sans");
+        nvgFillColor(vg, nvgRGB(255, 255, 255));
+        nvgText(vg, x, 160, fm->current_dir->path, NULL);
+
+        // for (size_t i = 0; i < fm->history_pos; ++i) {
+        //     float bounds[4];
+        //     nvgTextBounds(vg, 0, 0, fm->history[i]->name, NULL, bounds);
+        //     printf("BOUNDS: %f\n", bounds[2]);
+        //     nvgText(vg, x, 160, fm->history[i]->name, NULL);
+        //     x += bounds[2] + 10;
+        // }
+    }
+
     draw_ui(&vr_list, vg);
 
-    // Draw menus
-    // if (depth == 0) {
-    // draw_vertical_list(vg, &vr_list, fm->current_dir->children, fm->current_dir->child_count, width * 0.2, 240);
-    // } else {
-    // draw depths...
-
-    // float s = 45;
-    // nvgBeginPath(vg);
-    // float x = width * 0.2f;
-    // nvgFontSize(vg, s);
-    // nvgFontFace(vg, "icon");
-    // nvgFillColor(vg, nvgRGB(255, 255, 255));
-    // nvgTextAlign(vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-    // nvgText(vg, x - 120, 240, "\ue950", NULL);
-    //
-    // draw_vertical_list(vg, &vr_list, fm->current_dir->children, fm->current_dir->child_count, x, 240);
-    // }
-
-    draw_horizontal_menu(vg, &hr_list, width * 0.2f, 140);
+    draw_horizontal_menu(vg, &hr_list, width * 0.2f, 150);
 
     nvgEndFrame(vg);
 }
@@ -321,7 +334,7 @@ int main() {
     }
 
     glfwSetTime(0);
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
 
     // Initialize menu data
     srand(time(NULL));
@@ -339,7 +352,7 @@ int main() {
         // Update animations
         update_animations(delta_time);
 
-        gfx_animation_update(current_time);
+        gfx_animation_update(current_time * 1.5);
 
         last_time = current_time;
 

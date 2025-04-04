@@ -6,19 +6,14 @@ typedef struct {
     char title[50];
     char path[50];
     char icon[100];
-
 } HrItem;
 
 typedef struct {
-
+    int depth;
     int selected;
-    int category_count;
+    int items_count;
     HrItem *items;
-    struct {
-        float offset;        // Current horizontal offset
-        float target_offset; // Target horizontal offset
-    } anim;
-
+    float scroll;
 } HorizontalList;
 
 void init_horizontal_list(HorizontalList *hr_list);

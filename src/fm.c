@@ -47,8 +47,6 @@ FileEntry *create_file_entry(const char *path) {
     entry->children = NULL;
     entry->child_count = 0;
     entry->parent = NULL;
-    entry->selected = false;
-    entry->expanded = false;
 
     return entry;
 }
@@ -390,24 +388,8 @@ void change_directory(FileManager *fm, const char *path) {
 
     fm->current_dir = new_dir;
     fm->selected_entry = NULL;
-    fm->scroll_offset = 0;
 
     sort_entries(fm);
-}
-
-// Select entry by index
-void select_entry(FileManager *fm, int index) {
-    if (!fm || !fm->current_dir)
-        return;
-
-    if (index >= 0 && index < fm->current_dir->child_count) {
-        fm->selected_entry = fm->current_dir->children[index];
-
-        // Update selection state
-        for (size_t i = 0; i < fm->current_dir->child_count; i++) {
-            fm->current_dir->children[i]->selected = (i == index);
-        }
-    }
 }
 
 // Refresh current directory contents
@@ -423,16 +405,6 @@ void refresh_current_dir(FileManager *fm) {
 
     read_directory(fm->current_dir);
     sort_entries(fm);
-
-    // Try to restore selection
-    if (selected_name[0]) {
-        for (size_t i = 0; i < fm->current_dir->child_count; i++) {
-            if (strcmp(fm->current_dir->children[i]->name, selected_name) == 0) {
-                select_entry(fm, i);
-                break;
-            }
-        }
-    }
 }
 
 // Sort entries according to current sort mode
@@ -486,7 +458,6 @@ void go_back(FileManager *fm) {
     fm->history_pos--;
     fm->current_dir = fm->history[fm->history_pos];
     fm->selected_entry = NULL;
-    fm->scroll_offset = 0;
 
     refresh_current_dir(fm);
 }
@@ -499,7 +470,6 @@ void go_forward(FileManager *fm) {
     fm->history_pos++;
     fm->current_dir = fm->history[fm->history_pos];
     fm->selected_entry = NULL;
-    fm->scroll_offset = 0;
 
     refresh_current_dir(fm);
 }

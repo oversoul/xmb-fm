@@ -64,6 +64,7 @@ struct animations {
     struct tween *list;
 };
 
+typedef struct tween tween_t;
 typedef struct animations animation_t;
 
 bool gfx_animation_push(AnimatedProperty *entry);

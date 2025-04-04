@@ -28,10 +28,6 @@ typedef struct file_entry {
     size_t child_count;           // Number of children
     struct file_entry *parent;    // Parent directory
 
-    // For UI purposes
-    bool selected; // Selection state in UI
-    bool expanded; // Expansion state (for directories)
-
     float x;
     float y;
     float zoom;
@@ -54,14 +50,6 @@ typedef struct file_manager {
     uint8_t sort_mode; // 0: name, 1: date, 2: size, etc.
     bool show_hidden;  // Whether to show hidden files
     bool reverse_sort; // Ascending/descending sort
-
-    // UI state
-    int scroll_offset; // Scroll position
-    int view_width;    // View dimensions
-    int view_height;
-
-    // Optional: for multi-pane view
-    struct file_manager *other_pane; // Pointer to other pane (for dual-pane)
 } FileManager;
 
 // Function prototypes for core operations
@@ -77,7 +65,6 @@ void go_back(FileManager *fm);
 
 // UI/Navigation functions
 void change_directory(FileManager *fm, const char *path);
-void select_entry(FileManager *fm, int index);
 void refresh_current_dir(FileManager *fm);
 void sort_entries(FileManager *fm);
 void toggle_hidden_files(FileManager *fm);

@@ -4,7 +4,7 @@ animation_t anim_st = {0};
 
 bool gfx_animation_push(AnimatedProperty *entry) {
     animation_t *p_anim = &anim_st;
-    struct tween t = {
+    tween_t t = {
         .subject = entry->subject,
         .duration = entry->duration,
         .target_value = entry->target,
@@ -27,7 +27,7 @@ void gfx_animation_update(float current_time) {
     animation_t *p_anim = &anim_st;
 
     for (int i = 0; i < ARR_LEN(p_anim->list); ++i) {
-        struct tween *tween = &p_anim->list[i];
+        tween_t *tween = &p_anim->list[i];
 
         float elapsed_time = current_time - tween->start_time;
         tween->running_since += elapsed_time;
