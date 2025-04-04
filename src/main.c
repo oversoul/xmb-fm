@@ -1,16 +1,17 @@
 #include "animation.h"
 #include "fm.h"
+#include "ui.h"
 #include <GL/glew.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <math.h>
 #include <time.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
 #include <GLFW/glfw3.h>
+
 #define NANOVG_GL3_IMPLEMENTATION
 #include "nanovg.h"
 #include "nanovg_gl.h"
@@ -193,42 +194,6 @@ void initialize_menu_data() {
     vr_list.get_screen_size = get_window_size;
 }
 
-// Drawing functions
-void draw_background(NVGcontext *vg) {
-    // Simple blue gradient background
-    NVGpaint bg_paint = nvgLinearGradient(vg, 0, 0, 0, state.height, nvgRGBA(0, 20, 50, 255), nvgRGBA(0, 10, 30, 255));
-    nvgBeginPath(vg);
-    nvgRect(vg, 0, 0, state.width, state.height);
-    nvgFillPaint(vg, bg_paint);
-    nvgFill(vg);
-
-    // Add animated wave effect
-    float time = glfwGetTime();
-    for (int i = 0; i < 5; i++) {
-        float alpha = 0.12f - i * 0.02f;
-        float offset = i * 80.0f;
-        float amplitude = 25.0f - i * 4.0f;
-        float frequency = 0.006f + i * 0.001f;
-        float speed = 0.7f + i * 0.1f;
-
-        nvgBeginPath(vg);
-        nvgMoveTo(vg, 0, state.height * 0.7f + sinf(time * speed) * amplitude + offset);
-
-        for (int x = 0; x <= state.width; x += 15) {
-            float y = state.height * 0.7f + sinf(time * speed + x * frequency) * amplitude + offset;
-            nvgLineTo(vg, x, y);
-        }
-
-        nvgLineTo(vg, state.width, state.height);
-        nvgLineTo(vg, 0, state.height);
-        nvgClosePath(vg);
-
-        NVGcolor wave_color = nvgRGBAf(0.2f, 0.6f, 1.0f, alpha);
-        nvgFillColor(vg, wave_color);
-        nvgFill(vg);
-    }
-}
-
 // Main rendering function
 void render(GLFWwindow *window, NVGcontext *vg) {
     int width, height;
@@ -240,27 +205,9 @@ void render(GLFWwindow *window, NVGcontext *vg) {
     glViewport(0, 0, width, height);
     nvgBeginFrame(vg, winWidth, winHeight, (float)winWidth / (float)winHeight);
 
-    // Draw background
-    draw_background(vg);
-
-    if (hr_list.depth > 0) {
-        float x = 200;
-        nvgFontSize(vg, 12);
-        nvgFontFace(vg, "sans");
-        nvgFillColor(vg, nvgRGB(255, 255, 255));
-        nvgText(vg, x, 160, fm->current_dir->path, NULL);
-
-        // for (size_t i = 0; i < fm->history_pos; ++i) {
-        //     float bounds[4];
-        //     nvgTextBounds(vg, 0, 0, fm->history[i]->name, NULL, bounds);
-        //     printf("BOUNDS: %f\n", bounds[2]);
-        //     nvgText(vg, x, 160, fm->history[i]->name, NULL);
-        //     x += bounds[2] + 10;
-        // }
-    }
-
-    draw_ui(&vr_list, vg);
-
+    draw_background(vg, state.width, state.height);
+    draw_folder_path(vg, &hr_list, fm->current_dir->path);
+    draw_vertical_list(vg, &vr_list);
     draw_horizontal_menu(vg, &hr_list, width * 0.2f, 150);
 
     // draw preview image

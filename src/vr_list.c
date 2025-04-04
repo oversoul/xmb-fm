@@ -1,12 +1,5 @@
 #include "animation.h"
-#include "nanovg.h"
-
 #include "vr_list.h"
-#include <GLFW/glfw3.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 static float item_y(const VerticalList *list, int i, size_t current) {
     float icon_spacing_vertical = list->icon_spacing_vertical;
@@ -62,6 +55,9 @@ void selection_pointer_changed(VerticalList *list, float current_time) {
     list->get_screen_size(NULL, &height);
     calculate_visible_range(list, height, end, (unsigned)selection, &entry_start, &entry_end);
 
+    list->entry_start = entry_start;
+    list->entry_end = entry_end;
+
     for (i = 0; i < end; i++) {
         float iy, real_iy;
         float ia = 0.5; // items_passive_alpha;
@@ -107,52 +103,6 @@ void selection_pointer_changed(VerticalList *list, float current_time) {
             anim_entry.start_time = current_time;
 
             gfx_animation_push(&anim_entry);
-        }
-    }
-}
-
-void draw_ui(const VerticalList *list, NVGcontext *vg) {
-    unsigned end = (unsigned)list->items_count;
-    unsigned height, entry_start, entry_end;
-    list->get_screen_size(NULL, &height);
-    calculate_visible_range(list, height, end, (unsigned)list->selected, &entry_start, &entry_end);
-
-    for (int i = entry_start; i < entry_end; i++) {
-        struct file_entry *node = list->items[i];
-
-        float x = 190 + node->x;
-        float y = list->margins_screen_top + node->y;
-
-        NVGcolor icon_color = nvgRGBAf(0.8f, 0.8f, 1.0f, node->alpha);
-
-        float size = list->icon_size;
-        nvgFontSize(vg, size);
-        nvgFontFace(vg, "icon");
-        nvgFillColor(vg, icon_color);
-        nvgTextAlign(vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-
-        if (node->type == TYPE_DIRECTORY) {
-            nvgText(vg, x - size / 2, y, "\ue950", NULL);
-        } else if (node->type == TYPE_FILE) {
-            nvgText(vg, x - size / 2, y, "\ue96d", NULL);
-        }
-
-        NVGcolor text_color = nvgRGBAf(1.0f, 1.0f, 1.0f, node->label_alpha);
-
-        nvgFontSize(vg, 16);
-        nvgFontFace(vg, "sans");
-        nvgFillColor(vg, text_color);
-        nvgTextAlign(vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-        nvgText(vg, x + 50, y, node->name, NULL);
-
-        // Add glow effect for selected item
-        if (i == list->selected) {
-            float pulse = 0.5f + 0.3f * sinf(glfwGetTime() * 3.0f);
-            NVGcolor glow_color = nvgRGBAf(1.0f, 1.0f, 1.0f, 0.2f * pulse);
-            nvgBeginPath(vg);
-            nvgRoundedRect(vg, x + 45.0f, y - 20.0f, 400.0f, 40, 10.0f);
-            nvgFillColor(vg, glow_color);
-            nvgFill(vg);
         }
     }
 }

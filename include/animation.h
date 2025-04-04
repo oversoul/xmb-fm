@@ -12,7 +12,7 @@
 #define ARR_SIZEOF(b) ((b) ? ARR_LEN(b) * sizeof(*b) : 0)
 
 #define ARR_FREE(b) ((b) ? (free(ARR__HDR(b)), (b) = NULL) : 0)
-#define ARR_FIT(b, n) ((size_t)(n) <= ARR_CAP(b) ? 0 : (*(void **)(&(b)) = rbuf__grow((b), (n), sizeof(*(b)))))
+#define ARR_FIT(b, n) ((size_t)(n) <= ARR_CAP(b) ? 0 : (*(void **)(&(b)) = arr__grow((b), (n), sizeof(*(b)))))
 #define ARR_PUSH(b, val) (ARR_FIT((b), 1 + ARR_LEN(b)), (b)[ARR__HDR(b)->len++] = (val))
 #define ARR_POP(b) (b)[--ARR__HDR(b)->len]
 #define ARR_RESIZE(b, sz) (ARR_FIT((b), (sz)), ((b) ? ARR__HDR(b)->len = (sz) : 0))
@@ -25,7 +25,7 @@ struct rbuf__hdr {
     size_t cap;
 };
 
-static void *rbuf__grow(void *buf, size_t new_len, size_t elem_size) {
+static void *arr__grow(void *buf, size_t new_len, size_t elem_size) {
     struct rbuf__hdr *new_hdr;
     size_t new_cap = MAX(2 * ARR_CAP(buf), MAX(new_len, 16));
     size_t new_size = sizeof(struct rbuf__hdr) + new_cap * elem_size;
