@@ -26,5 +26,5 @@ typedef struct {
     void (*get_screen_size)(unsigned *width, unsigned *height);
 } VerticalList;
 
-void selection_pointer_changed(VerticalList *list);
+void selection_pointer_changed(VerticalList *list, float current_time);
 void draw_ui(const VerticalList *list, NVGcontext *vg);

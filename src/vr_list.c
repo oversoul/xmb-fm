@@ -51,7 +51,7 @@ static void calculate_visible_range(const VerticalList *list, unsigned height, s
     }
 }
 
-void selection_pointer_changed(VerticalList *list) {
+void selection_pointer_changed(VerticalList *list, float current_time) {
     unsigned i, end, height, entry_start, entry_end;
     int threshold = 0;
     size_t selection = list->selected;
@@ -87,24 +87,24 @@ void selection_pointer_changed(VerticalList *list) {
             anim_entry.duration = 100;
             anim_entry.target = ia;
             anim_entry.subject = &node->alpha;
-            anim_entry.start_time = glfwGetTime();
+            anim_entry.start_time = current_time;
 
             gfx_animation_push(&anim_entry);
 
             anim_entry.subject = &node->label_alpha;
-            anim_entry.start_time = glfwGetTime();
+            anim_entry.start_time = current_time;
 
             gfx_animation_push(&anim_entry);
 
             anim_entry.target = iz;
             anim_entry.subject = &node->zoom;
-            anim_entry.start_time = glfwGetTime();
+            anim_entry.start_time = current_time;
 
             gfx_animation_push(&anim_entry);
 
             anim_entry.target = iy;
             anim_entry.subject = &node->y;
-            anim_entry.start_time = glfwGetTime();
+            anim_entry.start_time = current_time;
 
             gfx_animation_push(&anim_entry);
         }

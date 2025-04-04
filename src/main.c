@@ -182,13 +182,13 @@ void initialize_menu_data() {
 
     // vr
     vr_list.above_subitem_offset = 0.0f;
-    vr_list.above_item_offset = -2.0f;
+    vr_list.above_item_offset = -1.5f;
     vr_list.active_item_factor = 1.0f;
     vr_list.under_item_offset = 1.0f;
 
     vr_list.icon_size = 28.0;
     vr_list.margins_screen_top = 200;
-    vr_list.icon_spacing_vertical = 40.0;
+    vr_list.icon_spacing_vertical = 50.0;
 
     vr_list.get_screen_size = get_window_size;
 }
@@ -336,11 +336,12 @@ int main() {
         // Clear screen
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // should be moved
         vr_list.items = fm->current_dir->children;
         vr_list.items_count = fm->current_dir->child_count;
 
-        selection_pointer_changed(&vr_list);
-        update_horizontal_list(&hr_list);
+        selection_pointer_changed(&vr_list, current_time);
+        update_horizontal_list(&hr_list, current_time);
 
         // Render menu
         render(window, vg);

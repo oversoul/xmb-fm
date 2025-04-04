@@ -17,5 +17,5 @@ typedef struct {
 } HorizontalList;
 
 void init_horizontal_list(HorizontalList *hr_list);
-void update_horizontal_list(HorizontalList *hr_list);
+void update_horizontal_list(HorizontalList *hr_list, float current_time);
 void draw_horizontal_menu(NVGcontext *vg, HorizontalList *hr_list, int x, int y);

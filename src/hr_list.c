@@ -1,17 +1,16 @@
 #include "hr_list.h"
 #include "animation.h"
-#include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 void init_horizontal_list(HorizontalList *hr_list) {}
 
-void update_horizontal_list(HorizontalList *hr_list) {
+void update_horizontal_list(HorizontalList *hr_list, float current_time) {
     float offset = 150;
 
     AnimatedProperty anim;
     anim.duration = 100;
-    anim.start_time = glfwGetTime();
+    anim.start_time = current_time;
     anim.target = hr_list->selected * offset;
     if (hr_list->depth > 0) {
         anim.target += 50;
