@@ -113,11 +113,14 @@ void selection_pointer_changed(VerticalList *list) {
 
 void draw_ui(const VerticalList *list, NVGcontext *vg) {
     unsigned end = (unsigned)list->items_count;
+    unsigned height, entry_start, entry_end;
+    list->get_screen_size(NULL, &height);
+    calculate_visible_range(list, height, end, (unsigned)list->selected, &entry_start, &entry_end);
 
-    for (int i = 0; i < end; i++) {
+    for (int i = entry_start; i < entry_end; i++) {
         struct file_entry *node = list->items[i];
 
-        float x = 200 + node->x;
+        float x = 190 + node->x;
         float y = list->margins_screen_top + node->y;
 
         NVGcolor icon_color = nvgRGBAf(0.8f, 0.8f, 1.0f, node->alpha);

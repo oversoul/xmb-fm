@@ -33,7 +33,7 @@ void gfx_animation_update(float current_time) {
         tween->running_since += elapsed_time;
 
         float t = elapsed_time / tween->duration;
-        *tween->subject = smoothStep(*tween->subject, tween->target_value, t, 800);
+        *tween->subject = smoothStep(*tween->subject, tween->target_value, t, 2500);
 
         if (tween->running_since >= tween->duration) {
             *tween->subject = tween->target_value;

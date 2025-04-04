@@ -51,6 +51,8 @@ void draw_horizontal_menu(NVGcontext *vg, HorizontalList *hr_list, int x, int y)
     if (hr_list->depth > 0) {
         nvgBeginPath(vg);
 
+        float scale_factor = 1.5f;
+        size *= scale_factor;
         float x = base_x + (hr_list->selected * gap);
         nvgRoundedRect(vg, x - size / 2, y - size / 2, size, size, 20);
         nvgFillColor(vg, icon_color);
@@ -79,5 +81,11 @@ void draw_horizontal_menu(NVGcontext *vg, HorizontalList *hr_list, int x, int y)
         nvgRoundedRect(vg, x - size / 2, y - size / 2, size, size, 20);
         nvgFillColor(vg, icon_color);
         nvgFill(vg);
+
+        // icon
+        nvgFontSize(vg, 30 * scale_factor);
+        nvgFillColor(vg, nvgRGBAf(0, 0, 0, opacity));
+        nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+        nvgText(vg, x, y + scale_factor * 5, hr_list->items[i].icon, NULL);
     }
 }

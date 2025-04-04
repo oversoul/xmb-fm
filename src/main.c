@@ -136,48 +136,47 @@ void initialize_menu_data() {
     // Users category
     strcpy(horizontalItems[0].title, "Home");
     strcpy(horizontalItems[0].path, homedir);
-    strcpy(horizontalItems[0].icon, "/ico/Icons.6.png");
+    strcpy(horizontalItems[0].icon, "");
 
     // Settings category
     strcpy(horizontalItems[1].title, "Desktop");
     sprintf(horizontalItems[1].path, "%s/%s", homedir, "Desktop");
-    strcpy(horizontalItems[1].icon, "/ico/Icons.35.png");
+    strcpy(horizontalItems[1].icon, "");
 
     // Add more categories like in the Vue code
     strcpy(horizontalItems[2].title, "Documents");
     sprintf(horizontalItems[2].path, "%s/%s", homedir, "Documents");
-    strcpy(horizontalItems[2].icon, "/ico/Icons.1.png");
+    strcpy(horizontalItems[2].icon, "󱔗");
 
     // Songs category
     strcpy(horizontalItems[3].title, "Downloads");
     sprintf(horizontalItems[3].path, "%s/%s", homedir, "Downloads");
-    strcpy(horizontalItems[3].icon, "/ico/Icons.16.png");
+    strcpy(horizontalItems[3].icon, "");
 
     // Movies category
     strcpy(horizontalItems[4].title, "Pictures");
     sprintf(horizontalItems[4].path, "%s/%s", homedir, "Pictures");
-    strcpy(horizontalItems[4].icon, "/ico/Icons.38.png");
+    strcpy(horizontalItems[4].icon, "");
 
     // Games category
     strcpy(horizontalItems[5].title, "Public");
     sprintf(horizontalItems[5].path, "%s/%s", homedir, "Public");
-    strcpy(horizontalItems[5].icon, "/ico/Icons.39.png");
+    strcpy(horizontalItems[5].icon, "");
 
     // Network category
     strcpy(horizontalItems[6].title, "Videos");
     sprintf(horizontalItems[6].path, "%s/%s", homedir, "Videos");
-    strcpy(horizontalItems[6].icon, "/ico/Icons.18.png");
+    strcpy(horizontalItems[6].icon, "󰕧");
 
     // Friends category
     strcpy(horizontalItems[7].title, "File System");
     strcpy(horizontalItems[7].path, "/");
-    strcpy(horizontalItems[7].icon, "/ico/Icons.9.png");
+    strcpy(horizontalItems[7].icon, "");
 
     fm = create_file_manager(horizontalItems[hr_list.selected].path);
-    sort_entries(fm);
+    // sort_entries(fm);
 
     // Initialize animation state
-    init_horizontal_list(&hr_list);
     hr_list.items = horizontalItems;
     hr_list.items_count = 8;
 
@@ -263,6 +262,8 @@ void render(GLFWwindow *window, NVGcontext *vg) {
     draw_ui(&vr_list, vg);
 
     draw_horizontal_menu(vg, &hr_list, width * 0.2f, 150);
+
+    // draw preview image
 
     nvgEndFrame(vg);
 }
