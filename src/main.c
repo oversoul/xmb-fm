@@ -23,6 +23,8 @@
 typedef struct {
     int width, height;
     int depth;
+    bool show_preview;
+    char buffer[512];
 } State;
 
 State state = {0};
@@ -52,10 +54,18 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
     if (action != GLFW_PRESS)
         return;
 
-    switch (key) {
-    case GLFW_KEY_ESCAPE:
-        glfwSetWindowShouldClose(window, GL_TRUE);
+    if (state.show_preview) {
+        if (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_P) {
+            memset(state.buffer, 0, 512);
+            state.show_preview = false;
+        }
         return;
+    }
+
+    switch (key) {
+    case GLFW_KEY_ESCAPE: {
+        glfwSetWindowShouldClose(window, GL_TRUE);
+    } break;
     case GLFW_KEY_LEFT:
         if (state.depth > 0) {
             return;
@@ -92,10 +102,17 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         }
         break;
     case GLFW_KEY_DOWN:
-        if (vr_list.selected < vr_list.items_count - 1) {
+        if (vr_list.selected < vr_list.entry_end - 1) {
             vr_list.selected++;
         }
         break;
+
+    case GLFW_KEY_P: {
+        struct file_entry *current = fm->current_dir->children[vr_list.selected];
+        if (current->type == TYPE_FILE && is_text_file(current->path, state.buffer, 512)) {
+            state.show_preview = true;
+        }
+    } break;
     case GLFW_KEY_BACKSPACE:
         if (state.depth == 0)
             return;
@@ -109,15 +126,12 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
     case GLFW_KEY_ENTER:
         struct file_entry *current = fm->current_dir->children[vr_list.selected];
         if (current->type == TYPE_DIRECTORY) {
-            printf("NAVIGATE: %s\n", current->name);
             state.depth++;
 
             hr_list.depth = 1;
             change_directory(fm, current->path);
             vr_list.selected = 0;
         } else if (current->type == TYPE_FILE) {
-            // open
-            printf("OPEN: %s\n", current->path);
             char command[1060];
             sprintf(command, "xdg-open \"%s\" &", current->path);
             system(command);
@@ -212,6 +226,10 @@ void render(GLFWwindow *window, NVGcontext *vg) {
 
     // draw preview image
 
+    if (state.show_preview) {
+        draw_text_preview(vg, state.buffer, 512, state.width, state.height);
+    }
+
     nvgEndFrame(vg);
 }
 
@@ -287,7 +305,7 @@ int main() {
         vr_list.items = fm->current_dir->children;
         vr_list.items_count = fm->current_dir->child_count;
 
-        selection_pointer_changed(&vr_list, current_time);
+        update_vertical_list(&vr_list, current_time);
         update_horizontal_list(&hr_list, current_time);
 
         // Render menu

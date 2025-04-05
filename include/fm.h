@@ -71,3 +71,5 @@ void toggle_hidden_files(FileManager *fm);
 
 FileManager *create_file_manager(const char *start_path);
 void free_file_manager(FileManager *fm);
+
+bool is_text_file(const char *filename, char *buffer, int len);

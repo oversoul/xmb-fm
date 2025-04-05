@@ -1,4 +1,5 @@
 #include "animation.h"
+#include <stdio.h>
 #include "vr_list.h"
 
 static float item_y(const VerticalList *list, int i, size_t current) {
@@ -44,7 +45,7 @@ static void calculate_visible_range(const VerticalList *list, unsigned height, s
     }
 }
 
-void selection_pointer_changed(VerticalList *list, float current_time) {
+void update_vertical_list(VerticalList *list, float current_time) {
     unsigned i, end, height, entry_start, entry_end;
     int threshold = 0;
     size_t selection = list->selected;
@@ -56,9 +57,9 @@ void selection_pointer_changed(VerticalList *list, float current_time) {
     calculate_visible_range(list, height, end, (unsigned)selection, &entry_start, &entry_end);
 
     list->entry_start = entry_start;
-    list->entry_end = entry_end;
+    list->entry_end = entry_end + 1;
 
-    for (i = 0; i < end; i++) {
+    for (i = list->entry_start; i < list->entry_end; i++) {
         float iy, real_iy;
         float ia = 0.5; // items_passive_alpha;
         float iz = 0.5; // items_passive_zoom;

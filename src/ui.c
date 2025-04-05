@@ -1,9 +1,12 @@
 #include "ui.h"
 #include "hr_list.h"
+#include "nanovg.h"
 #include "vr_list.h"
 #include <GLFW/glfw3.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void draw_background(NVGcontext *vg, float width, float height) {
     // Simple blue gradient background
@@ -165,4 +168,50 @@ void draw_vertical_list(NVGcontext *vg, const VerticalList *list) {
             nvgFill(vg);
         }
     }
+}
+
+void draw_text_preview(NVGcontext *vg, const char *text, size_t len, float width, float height) {
+    NVGtextRow rows[3];
+    const char *start;
+    const char *end;
+
+    nvgSave(vg);
+
+    float lineh = 20;
+    nvgFontSize(vg, 16);
+    nvgFontFace(vg, "sans");
+    nvgTextAlign(vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
+
+    float x = 40;
+    float y = 40;
+    width -= 80;
+    height -= 80;
+
+    nvgBeginPath(vg);
+    nvgRoundedRect(vg, x, y, width, height, 20);
+    nvgFillColor(vg, nvgRGBAf(0, 0, 0, .8));
+    nvgFill(vg);
+    float padding = 20;
+
+    x += padding;
+    y += padding;
+    width -= padding * 2;
+
+    start = text;
+    end = text + strlen(text);
+    int nrows;
+    while ((nrows = nvgTextBreakLines(vg, start, end, width, rows, 3))) {
+        for (size_t i = 0; i < nrows; i++) {
+            NVGtextRow *row = &rows[i];
+
+            nvgFillColor(vg, nvgRGBA(255, 255, 255, 255));
+            nvgText(vg, x, y, row->start, row->end);
+
+            y += lineh;
+        }
+
+        start = rows[nrows - 1].next;
+    }
+
+    nvgRestore(vg);
 }

@@ -493,3 +493,19 @@ void display_directory(FileManager *fm) {
 
     printf("--------------------------------------------------\n");
 }
+
+bool is_text_file(const char *filename, char *buffer, int len) {
+    FILE *file = fopen(filename, "rb");
+    if (!file)
+        return false; // Error opening file
+
+    size_t bytesRead = fread(buffer, 1, len, file);
+    fclose(file);
+
+    for (size_t i = 0; i < bytesRead; i++) {
+        if (buffer[i] < 8 || (buffer[i] > 13 && buffer[i] < 32) || buffer[i] == 127) {
+            return false; // Likely binary (image, executable, etc.)
+        }
+    }
+    return true;
+}
