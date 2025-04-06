@@ -13,9 +13,9 @@ typedef enum {
 } FileType;
 
 typedef struct file_entry {
-    char name[256];       // File/directory name
-    char path[1024];      // Full path
-    FileType type;        // 0: file, 1: directory, 2: symlink, etc.
+    char name[256];
+    char path[1024];
+    FileType type;
     size_t size;          // File size in bytes
     time_t modified_time; // Last modified timestamp
     time_t access_time;   // Last access timestamp
@@ -73,3 +73,5 @@ FileManager *create_file_manager(const char *start_path);
 void free_file_manager(FileManager *fm);
 
 bool is_text_file(const char *filename, char *buffer, int len);
+
+int find_index_of(FileManager *fm, const char *path, int default_index);

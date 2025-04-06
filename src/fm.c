@@ -333,6 +333,8 @@ FileManager *create_file_manager(const char *start_path) {
     read_directory(fm->current_dir);
     fm->history[0] = fm->current_dir;
 
+    sort_entries(fm);
+
     return fm;
 }
 
@@ -472,6 +474,16 @@ void go_forward(FileManager *fm) {
     fm->selected_entry = NULL;
 
     refresh_current_dir(fm);
+}
+
+int find_index_of(FileManager *fm, const char *path, int default_index) {
+    for (size_t i = 0; i < fm->current_dir->child_count; ++i) {
+        if (strcmp(fm->current_dir->children[i]->path, path) == 0) {
+            return i;
+        }
+    }
+
+    return default_index;
 }
 
 // Simple function to display file manager contents to console (for testing)

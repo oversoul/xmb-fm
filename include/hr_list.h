@@ -14,5 +14,4 @@ typedef struct {
     int items_count;
 } HorizontalList;
 
-void init_horizontal_list(HorizontalList *hr_list);
 void update_horizontal_list(HorizontalList *hr_list, float current_time);

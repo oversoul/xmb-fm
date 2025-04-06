@@ -50,6 +50,9 @@ void update_vertical_list(VerticalList *list, float current_time) {
     int threshold = 0;
     size_t selection = list->selected;
 
+    if (list->items_count == 0)
+        return;
+
     end = (unsigned)list->items_count;
     threshold = list->icon_size * 10;
 
@@ -59,7 +62,7 @@ void update_vertical_list(VerticalList *list, float current_time) {
     list->entry_start = entry_start;
     list->entry_end = entry_end + 1;
 
-    for (i = list->entry_start; i < list->entry_end; i++) {
+    for (i = 0; i < end; i++) {
         float iy, real_iy;
         float ia = 0.5; // items_passive_alpha;
         float iz = 0.5; // items_passive_zoom;
@@ -81,29 +84,36 @@ void update_vertical_list(VerticalList *list, float current_time) {
             /* Move up/down animation */
             AnimatedProperty anim_entry;
 
-            anim_entry.duration = 100;
+            anim_entry.duration = .2;
+
             anim_entry.target = ia;
             anim_entry.subject = &node->alpha;
             anim_entry.start_time = current_time;
-
             gfx_animation_push(&anim_entry);
 
+            anim_entry.target = ia;
             anim_entry.subject = &node->label_alpha;
             anim_entry.start_time = current_time;
-
             gfx_animation_push(&anim_entry);
 
             anim_entry.target = iz;
+            anim_entry.duration = 0.05;
             anim_entry.subject = &node->zoom;
             anim_entry.start_time = current_time;
 
             gfx_animation_push(&anim_entry);
 
             anim_entry.target = iy;
+            anim_entry.duration = .2;
             anim_entry.subject = &node->y;
             anim_entry.start_time = current_time;
 
             gfx_animation_push(&anim_entry);
+
+            // printf("IY: %f\n", iy);
+            // node->y = iy;
+            // node->zoom = iz;
+            // node->alpha = node->label_alpha = ia;
         }
     }
 }

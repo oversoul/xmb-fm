@@ -78,6 +78,12 @@ void draw_horizontal_menu(NVGcontext *vg, const HorizontalList *hr_list, int x, 
         nvgRoundedRect(vg, x - size / 2, y - size / 2, size, size, 20);
         nvgFillColor(vg, icon_color);
         nvgFill(vg);
+
+        // icon
+        nvgFontSize(vg, 30 * scale_factor);
+        nvgFillColor(vg, nvgRGBAf(0, 0, 0, 1.0));
+        nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+        nvgText(vg, x, y + scale_factor * 5, hr_list->items[hr_list->selected].icon, NULL);
         return;
     }
 
@@ -105,7 +111,7 @@ void draw_horizontal_menu(NVGcontext *vg, const HorizontalList *hr_list, int x, 
 
         // icon
         nvgFontSize(vg, 30 * scale_factor);
-        nvgFillColor(vg, nvgRGBAf(0, 0, 0, opacity));
+        nvgFillColor(vg, nvgRGBA(0, 20, 50, 200));
         nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
         nvgText(vg, x, y + scale_factor * 5, hr_list->items[i].icon, NULL);
     }
@@ -130,15 +136,19 @@ void draw_folder_path(NVGcontext *vg, const HorizontalList *hr_list, const char 
 }
 
 void draw_vertical_list(NVGcontext *vg, const VerticalList *list) {
+    if (list->items_count == 0)
+        return;
+
+    float start_x = 190;
     for (int i = list->entry_start; i < list->entry_end; i++) {
         struct file_entry *node = list->items[i];
 
-        float x = 190 + node->x;
+        float x = start_x + node->x;
         float y = list->margins_screen_top + node->y;
 
         NVGcolor icon_color = nvgRGBAf(0.8f, 0.8f, 1.0f, node->alpha);
 
-        float size = list->icon_size;
+        float size = list->icon_size + (node->zoom == 1 ? 10 : 0);
         nvgFontSize(vg, size);
         nvgFontFace(vg, "icon");
         nvgFillColor(vg, icon_color);
@@ -152,22 +162,35 @@ void draw_vertical_list(NVGcontext *vg, const VerticalList *list) {
 
         NVGcolor text_color = nvgRGBAf(1.0f, 1.0f, 1.0f, node->label_alpha);
 
-        nvgFontSize(vg, 16);
+        nvgFontSize(vg, 12 + (node->zoom == 1 ? 4 : 0));
         nvgFontFace(vg, "sans");
         nvgFillColor(vg, text_color);
         nvgTextAlign(vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-        nvgText(vg, x + 50, y, node->name, NULL);
 
-        // Add glow effect for selected item
-        if (i == list->selected) {
-            float pulse = 0.5f + 0.3f * sinf(glfwGetTime() * 3.0f);
-            NVGcolor glow_color = nvgRGBAf(1.0f, 1.0f, 1.0f, 0.2f * pulse);
-            nvgBeginPath(vg);
-            nvgRoundedRect(vg, x + 45.0f, y - 20.0f, 400.0f, 40, 10.0f);
-            nvgFillColor(vg, glow_color);
-            nvgFill(vg);
+        // if (strlen(node->name) > 59) {
+        //     node->name[59] = '\0';
+        // }
+
+        char name[60];
+        if (strlen(node->name) > 59) {
+            memcpy(name, &node->name, 59);
+            name[59] = '\0';
+        } else {
+            memcpy(name, &node->name, strlen(node->name));
+            name[strlen(node->name)] = '\0';
         }
+
+        nvgText(vg, x + 50, y, name, NULL);
     }
+
+    // selected item always in place
+    float y = list->margins_screen_top + list->icon_spacing_vertical;
+    float pulse = 0.5f + 0.3f * sinf(glfwGetTime() * 3.0f);
+    NVGcolor glow_color = nvgRGBAf(1.0f, 1.0f, 1.0f, 0.2f * pulse);
+    nvgBeginPath(vg);
+    nvgRoundedRect(vg, start_x + 45.0f, y - 20.0f, 600.0f, 40, 10.0f);
+    nvgFillColor(vg, glow_color);
+    nvgFill(vg);
 }
 
 void draw_text_preview(NVGcontext *vg, const char *text, size_t len, float width, float height) {

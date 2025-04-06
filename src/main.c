@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -21,7 +22,8 @@
 
 // Global state
 typedef struct {
-    int width, height;
+    int width;
+    int height;
     int depth;
     bool show_preview;
     char buffer[512];
@@ -49,6 +51,12 @@ void get_window_size(unsigned *width, unsigned *height) {
     }
 }
 
+void vr_list_update() {
+    vr_list.items = fm->current_dir->children;
+    vr_list.items_count = fm->current_dir->child_count;
+    update_vertical_list(&vr_list, glfwGetTime());
+}
+
 // Input handling
 void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action != GLFW_PRESS)
@@ -66,12 +74,12 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
     case GLFW_KEY_ESCAPE: {
         glfwSetWindowShouldClose(window, GL_TRUE);
     } break;
-    case GLFW_KEY_LEFT:
-        if (state.depth > 0) {
+    case GLFW_KEY_LEFT: {
+        if (state.depth > 0)
             return;
-        }
         if (hr_list.selected > 0) {
             hr_list.selected--;
+            update_horizontal_list(&hr_list, glfwGetTime());
             while (fm->history_pos != 0)
                 go_back(fm);
             state.depth = 0;
@@ -79,14 +87,16 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
             change_directory(fm, horizontalItems[hr_list.selected].path);
 
             vr_list.selected = 0;
+            vr_list_update();
         }
-        break;
-    case GLFW_KEY_RIGHT:
-        if (state.depth > 0) {
+    } break;
+    case GLFW_KEY_RIGHT: {
+        if (state.depth > 0)
             return;
-        }
+
         if (hr_list.selected < hr_list.items_count - 1) {
             hr_list.selected++;
+            update_horizontal_list(&hr_list, glfwGetTime());
             while (fm->history_pos != 0)
                 go_back(fm);
             state.depth = 0;
@@ -94,18 +104,23 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
             change_directory(fm, horizontalItems[hr_list.selected].path);
 
             vr_list.selected = 0;
+            vr_list_update();
         }
-        break;
-    case GLFW_KEY_UP:
+    } break;
+    case GLFW_KEY_UP: {
         if (vr_list.selected > 0) {
             vr_list.selected--;
+
+            vr_list_update();
         }
-        break;
-    case GLFW_KEY_DOWN:
+    } break;
+    case GLFW_KEY_DOWN: {
         if (vr_list.selected < vr_list.entry_end - 1) {
             vr_list.selected++;
+
+            vr_list_update();
         }
-        break;
+    } break;
 
     case GLFW_KEY_P: {
         struct file_entry *current = fm->current_dir->children[vr_list.selected];
@@ -113,17 +128,23 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
             state.show_preview = true;
         }
     } break;
-    case GLFW_KEY_BACKSPACE:
+    case GLFW_KEY_BACKSPACE: {
         if (state.depth == 0)
             return;
         state.depth--;
-        if (state.depth == 0) {
+        if (state.depth == 0)
             hr_list.depth = 0;
-        }
+
+        const char *old = fm->current_dir->path;
+
         go_back(fm);
-        vr_list.selected = 0;
-        break;
-    case GLFW_KEY_ENTER:
+
+        vr_list.selected = find_index_of(fm, old, 0);
+
+        vr_list_update();
+        update_horizontal_list(&hr_list, glfwGetTime());
+    } break;
+    case GLFW_KEY_ENTER: {
         struct file_entry *current = fm->current_dir->children[vr_list.selected];
         if (current->type == TYPE_DIRECTORY) {
             state.depth++;
@@ -131,12 +152,14 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
             hr_list.depth = 1;
             change_directory(fm, current->path);
             vr_list.selected = 0;
+            vr_list_update();
+            update_horizontal_list(&hr_list, glfwGetTime());
         } else if (current->type == TYPE_FILE) {
             char command[1060];
             sprintf(command, "xdg-open \"%s\" &", current->path);
             system(command);
         }
-        break;
+    } break;
     }
 }
 
@@ -208,31 +231,6 @@ void initialize_menu_data() {
     vr_list.get_screen_size = get_window_size;
 }
 
-// Main rendering function
-void render(GLFWwindow *window, NVGcontext *vg) {
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-
-    int winWidth, winHeight;
-    glfwGetWindowSize(window, &winWidth, &winHeight);
-
-    glViewport(0, 0, width, height);
-    nvgBeginFrame(vg, winWidth, winHeight, (float)winWidth / (float)winHeight);
-
-    draw_background(vg, state.width, state.height);
-    draw_folder_path(vg, &hr_list, fm->current_dir->path);
-    draw_vertical_list(vg, &vr_list);
-    draw_horizontal_menu(vg, &hr_list, width * 0.2f, 150);
-
-    // draw preview image
-
-    if (state.show_preview) {
-        draw_text_preview(vg, state.buffer, 512, state.width, state.height);
-    }
-
-    nvgEndFrame(vg);
-}
-
 int main() {
     // Initialize GLFW
     if (!glfwInit()) {
@@ -292,6 +290,8 @@ int main() {
     srand(time(NULL));
     initialize_menu_data();
 
+    vr_list_update();
+
     // Main loop
     while (!glfwWindowShouldClose(window)) {
         float current_time = glfwGetTime();
@@ -301,15 +301,25 @@ int main() {
         // Clear screen
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // should be moved
-        vr_list.items = fm->current_dir->children;
-        vr_list.items_count = fm->current_dir->child_count;
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
 
-        update_vertical_list(&vr_list, current_time);
-        update_horizontal_list(&hr_list, current_time);
+        int winWidth, winHeight;
+        glfwGetWindowSize(window, &winWidth, &winHeight);
 
-        // Render menu
-        render(window, vg);
+        glViewport(0, 0, width, height);
+        nvgBeginFrame(vg, winWidth, winHeight, (float)winWidth / (float)winHeight);
+
+        draw_background(vg, state.width, state.height);
+        draw_folder_path(vg, &hr_list, fm->current_dir->path);
+        draw_vertical_list(vg, &vr_list);
+        draw_horizontal_menu(vg, &hr_list, 180, 150);
+
+        if (state.show_preview) {
+            draw_text_preview(vg, state.buffer, 512, state.width, state.height);
+        }
+
+        nvgEndFrame(vg);
 
         // Swap buffers
         glfwSwapBuffers(window);
