@@ -1,7 +1,7 @@
 #include "animation.h"
 #include "fm.h"
-#include "ui.h"
 #include <GL/glew.h>
+#include "ui.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,11 +13,12 @@
 #include <pwd.h>
 #include <GLFW/glfw3.h>
 
-#define NANOVG_GL3_IMPLEMENTATION
-#include "nanovg.h"
-#include "nanovg_gl.h"
+// #define NANOVG_GL3_IMPLEMENTATION
+// #include "nanovg.h"
+// #include "nanovg_gl.h"
 
 #include "hr_list.h"
+#include "draw.h"
 #include "vr_list.h"
 
 // Global state
@@ -25,10 +26,12 @@ typedef struct {
     int width;
     int height;
     int depth;
+    bool show_info;
     bool show_preview;
     char buffer[512];
 } State;
 
+int theme = 0;
 State state = {0};
 HrItem horizontalItems[10];
 
@@ -73,6 +76,14 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
     switch (key) {
     case GLFW_KEY_ESCAPE: {
         glfwSetWindowShouldClose(window, GL_TRUE);
+    } break;
+    case GLFW_KEY_EQUAL: {
+        if (theme < 20)
+            theme++;
+    } break;
+    case GLFW_KEY_MINUS: {
+        if (theme > 0)
+            theme--;
     } break;
     case GLFW_KEY_LEFT: {
         if (state.depth > 0)
@@ -128,6 +139,9 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
             state.show_preview = true;
         }
     } break;
+    case GLFW_KEY_I: {
+        state.show_info = !state.show_info;
+    } break;
     case GLFW_KEY_BACKSPACE: {
         if (state.depth == 0)
             return;
@@ -150,6 +164,7 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
             state.depth++;
 
             hr_list.depth = 1;
+
             change_directory(fm, current->path);
             vr_list.selected = 0;
             vr_list_update();
@@ -174,17 +189,17 @@ void initialize_menu_data() {
     // Users category
     strcpy(horizontalItems[0].title, "Home");
     strcpy(horizontalItems[0].path, homedir);
-    strcpy(horizontalItems[0].icon, "");
+    strcpy(horizontalItems[0].icon, "");
 
     // Settings category
     strcpy(horizontalItems[1].title, "Desktop");
     sprintf(horizontalItems[1].path, "%s/%s", homedir, "Desktop");
-    strcpy(horizontalItems[1].icon, "");
+    strcpy(horizontalItems[1].icon, "");
 
     // Add more categories like in the Vue code
     strcpy(horizontalItems[2].title, "Documents");
     sprintf(horizontalItems[2].path, "%s/%s", homedir, "Documents");
-    strcpy(horizontalItems[2].icon, "󱔗");
+    strcpy(horizontalItems[2].icon, "");
 
     // Songs category
     strcpy(horizontalItems[3].title, "Downloads");
@@ -194,17 +209,17 @@ void initialize_menu_data() {
     // Movies category
     strcpy(horizontalItems[4].title, "Pictures");
     sprintf(horizontalItems[4].path, "%s/%s", homedir, "Pictures");
-    strcpy(horizontalItems[4].icon, "");
+    strcpy(horizontalItems[4].icon, "");
 
     // Games category
     strcpy(horizontalItems[5].title, "Public");
     sprintf(horizontalItems[5].path, "%s/%s", homedir, "Public");
-    strcpy(horizontalItems[5].icon, "");
+    strcpy(horizontalItems[5].icon, "");
 
     // Network category
     strcpy(horizontalItems[6].title, "Videos");
     sprintf(horizontalItems[6].path, "%s/%s", homedir, "Videos");
-    strcpy(horizontalItems[6].icon, "󰕧");
+    strcpy(horizontalItems[6].icon, "");
 
     // Friends category
     strcpy(horizontalItems[7].title, "File System");
@@ -212,7 +227,6 @@ void initialize_menu_data() {
     strcpy(horizontalItems[7].icon, "");
 
     fm = create_file_manager(horizontalItems[hr_list.selected].path);
-    // sort_entries(fm);
 
     // Initialize animation state
     hr_list.items = horizontalItems;
@@ -263,28 +277,47 @@ int main() {
     }
 
     // Initialize NanoVG
-    NVGcontext *vg = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
-    if (vg == NULL) {
-        fprintf(stderr, "Failed to initialize NanoVG\n");
-        glfwTerminate();
-        return -1;
-    }
+    // NVGcontext *vg = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+    // if (vg == NULL) {
+    //     fprintf(stderr, "Failed to initialize NanoVG\n");
+    //     glfwTerminate();
+    //     return -1;
+    // }
 
     // Load font
-    int fontNormal = nvgCreateFont(vg, "sans", "./fonts/SpaceMonoNerdFont.ttf");
-    if (fontNormal == -1) {
-        printf("Could not add font.\n");
-        return -1;
-    }
-
-    int fontIcon = nvgCreateFont(vg, "icon", "./fonts/feather.ttf");
-    if (fontIcon == -1) {
-        printf("Could not add font.\n");
-        return -1;
-    }
+    // int fontNormal = nvgCreateFont(vg, "sans", "./fonts/SpaceMonoNerdFont.ttf");
+    // if (fontNormal == -1) {
+    //     printf("Could not add font.\n");
+    //     return -1;
+    // }
+    //
+    // int fontIcon = nvgCreateFont(vg, "icon", "./fonts/feather.ttf");
+    // if (fontIcon == -1) {
+    //     printf("Could not add font.\n");
+    //     return -1;
+    // }
 
     // glfwSetTime(0);
     glfwSwapInterval(1);
+
+    ui_create();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Register a font
+    if (register_font("sans", "./fonts/SpaceMonoNerdFont.ttf") < 0) {
+        fprintf(stderr, "Failed to register font\n");
+        ui_delete();
+        return -1;
+    }
+
+    int fontIcon = register_font("icon", "./fonts/feather.ttf");
+    if (fontIcon == -1) {
+        printf("Could not add font.\n");
+        ui_delete();
+        return -1;
+    }
 
     // Initialize menu data
     srand(time(NULL));
@@ -298,28 +331,31 @@ int main() {
 
         gfx_animation_update(current_time);
 
-        // Clear screen
-        glClear(GL_COLOR_BUFFER_BIT);
-
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
+
+        glViewport(0, 0, width, height);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         int winWidth, winHeight;
         glfwGetWindowSize(window, &winWidth, &winHeight);
 
-        glViewport(0, 0, width, height);
-        nvgBeginFrame(vg, winWidth, winHeight, (float)winWidth / (float)winHeight);
+        start_frame(width, height);
 
-        draw_background(vg, state.width, state.height);
-        draw_folder_path(vg, &hr_list, fm->current_dir->path);
-        draw_vertical_list(vg, &vr_list);
-        draw_horizontal_menu(vg, &hr_list, 180, 150);
+        draw_background(state.width, state.height, theme);
+        draw_folder_path(&hr_list, fm->current_dir->path);
+        draw_vertical_list(&vr_list);
+        draw_horizontal_menu(&hr_list, 180, 150);
 
         if (state.show_preview) {
-            draw_text_preview(vg, state.buffer, 512, state.width, state.height);
+            draw_text_preview(state.buffer, state.width, state.height);
         }
 
-        nvgEndFrame(vg);
+        if (state.show_info) {
+            draw_info(&vr_list, state.width, state.height);
+        }
+
+        end_frame();
 
         // Swap buffers
         glfwSwapBuffers(window);
@@ -329,8 +365,9 @@ int main() {
     free_file_manager(fm);
     gfx_animation_clean();
 
+    ui_delete();
     // Cleanup
-    nvgDeleteGL3(vg);
+    // nvgDeleteGL3(vg);
 
     glfwTerminate();
 

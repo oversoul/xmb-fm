@@ -46,7 +46,7 @@ float ease(float x) { return x * x * (3 - 2 * x); }
 void gfx_animation_update(float current_time) {
     animation_t *p_anim = &anim_st;
 
-    printf("animations: %zu\n", ARR_LEN(p_anim->list));
+    // printf("animations: %zu\n", ARR_LEN(p_anim->list));
     for (int i = 0; i < ARR_LEN(p_anim->list); ++i) {
         tween_t *tween = &p_anim->list[i];
 

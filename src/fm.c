@@ -163,7 +163,11 @@ int read_directory(FileEntry *dir) {
             continue;
 
         char full_path[1024];
-        snprintf(full_path, sizeof(full_path), "%s/%s", dir->path, entry->d_name);
+        if (strcmp(dir->path, "/") == 0) {
+            snprintf(full_path, sizeof(full_path), "/%s", entry->d_name);
+        } else {
+            snprintf(full_path, sizeof(full_path), "%s/%s", dir->path, entry->d_name);
+        }
 
         FileEntry *file_entry = create_file_entry(full_path);
         if (file_entry) {
@@ -333,7 +337,7 @@ FileManager *create_file_manager(const char *start_path) {
     read_directory(fm->current_dir);
     fm->history[0] = fm->current_dir;
 
-    sort_entries(fm);
+    // sort_entries(fm);
 
     return fm;
 }
