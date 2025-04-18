@@ -273,20 +273,18 @@ void draw_horizontal_menu(const HorizontalList *hr_list, int x, int y) {
     }
 }
 
-void draw_folder_path(const HorizontalList *hr_list, const char *path) {
+void draw_folder_path(const HorizontalList *hr_list, const char *path, float x, float y) {
     if (hr_list->depth == 0)
         return;
 
     use_font("sans");
-    float x = 200;
-    draw_text(12, x, 160, path, (Color){1, 1, 1, 1});
+    draw_text(12, x, y, path, (Color){1, 1, 1, 1});
 }
 
-void draw_vertical_list(const VerticalList *list) {
+void draw_vertical_list(const VerticalList *list, float start_x) {
     if (list->items_count == 0)
         return;
 
-    float start_x = 190;
     for (int i = list->entry_start; i < list->entry_end; i++) {
         struct file_entry *node = list->items[i];
 
