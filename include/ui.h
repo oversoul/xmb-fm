@@ -119,6 +119,6 @@ void create_font_atlas();
 void use_font(const char* name);
 void draw_wrapped_text(float size, float x, float y, const char *text, Color color, float max_width);
 int register_font(const char* name, const char *filename);
-void get_text_bounds(float size, const char *text, float *width, float *height);
+void get_text_bounds(float size, const char *text, float *width, float *height, float *start_x, float *bearing_y);
 void draw_text(float size, float x, float y, const char *text, Color color);
 void destroy_font_atlas();

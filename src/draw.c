@@ -9,7 +9,6 @@
 #include <string.h>
 
 void draw_background(float width, float height, int theme) {
-
     static Color gradient_golden[4] = {
         {174 / 255.0, 123 / 255.0, 44 / 255.0, 1.0},
         {205 / 255.0, 174 / 255.0, 84 / 255.0, 1.0},
@@ -238,7 +237,7 @@ void draw_horizontal_menu(const HorizontalList *hr_list, int x, int y) {
         Color icon_color = {0, 0, 0, 1.0};
 
         float w, h;
-        get_text_bounds(fsize, hr_list->items[hr_list->selected].icon, &w, &h);
+        get_text_bounds(fsize, hr_list->items[hr_list->selected].icon, &w, &h, NULL, NULL);
         draw_text(fsize, x - w / 2, y + h / 2, hr_list->items[hr_list->selected].icon, icon_color);
         return;
     }
@@ -269,7 +268,7 @@ void draw_horizontal_menu(const HorizontalList *hr_list, int x, int y) {
         float fsize = 30 * scale_factor;
 
         float w, h;
-        get_text_bounds(fsize, hr_list->items[i].icon, &w, &h);
+        get_text_bounds(fsize, hr_list->items[i].icon, &w, &h, NULL, NULL);
         draw_text(fsize, x - w / 2, y + h / 2, hr_list->items[i].icon, iconColor);
     }
 }
@@ -317,8 +316,8 @@ void draw_vertical_list(const VerticalList *list) {
 
         float w, h;
         float fsize = 12 + (node->zoom == 1 ? 4 : 0);
-        get_text_bounds(fsize, name, &w, &h);
-        draw_text(fsize, x + 50, y + h / 2 - 2, name, text_color);
+        get_text_bounds(fsize, name, &w, &h, NULL, NULL);
+        draw_text(fsize, x + 50, y + h / 2 - 4, name, text_color);
     }
 
     // selected item always in place

@@ -1,6 +1,6 @@
 CFLAGS=-Wall -std=c23 -pedantic -g -fcolor-diagnostics
 LDFLAGS = -lm -lGL -lglfw `pkg-config --libs freetype2 glew`
-INCS=-I nanovg/ -I include/ `pkg-config --cflags freetype2 glew`
+INCS=-I include/ `pkg-config --cflags freetype2 glew`
 
 COMPILER = clang
 
@@ -24,7 +24,7 @@ debug: all
 	gdb ./$(TARGET)
 
 $(TARGET): $(OBJ_FILES)
-	$(COMPILER) $(CFLAGS) $(INCS)  -o $@ $^ $(LDFLAGS) libnanovg.a
+	$(COMPILER) $(CFLAGS) $(INCS)  -o $@ $^ $(LDFLAGS)
 
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c

@@ -396,7 +396,7 @@ void get_string_glyphs(FontAtlas *atlas, int font_id, float size, const char *te
 }
 
 // Calculate text bounds
-void get_text_bounds(float size, const char *text, float *width, float *height) {
+void get_text_bounds(float size, const char *text, float *width, float *height, float *start_x, float *bearing_y) {
     GlyphInfo *glyphs;
     int glyph_count;
 
@@ -435,6 +435,11 @@ void get_text_bounds(float size, const char *text, float *width, float *height) 
 
     *width = max_x - min_x;
     *height = max_y - min_y;
+
+    if (start_x)
+        *start_x = min_x;
+    if (bearing_y)
+        *bearing_y = -min_y;
 
     free(glyphs);
 }

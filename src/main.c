@@ -13,10 +13,6 @@
 #include <pwd.h>
 #include <GLFW/glfw3.h>
 
-// #define NANOVG_GL3_IMPLEMENTATION
-// #include "nanovg.h"
-// #include "nanovg_gl.h"
-
 #include "hr_list.h"
 #include "draw.h"
 #include "vr_list.h"
@@ -219,7 +215,7 @@ void initialize_menu_data() {
     // Network category
     strcpy(horizontalItems[6].title, "Videos");
     sprintf(horizontalItems[6].path, "%s/%s", homedir, "Videos");
-    strcpy(horizontalItems[6].icon, "");
+    strcpy(horizontalItems[6].icon, "󰯜");
 
     // Friends category
     strcpy(horizontalItems[7].title, "File System");
@@ -258,7 +254,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create window
-    GLFWwindow *window = glfwCreateWindow(960, 720, "NanoVG", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(960, 720, "File Manager", NULL, NULL);
     if (!window) {
         fprintf(stderr, "Failed to create GLFW window\n");
         glfwTerminate();
@@ -276,28 +272,6 @@ int main() {
         return 1;
     }
 
-    // Initialize NanoVG
-    // NVGcontext *vg = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
-    // if (vg == NULL) {
-    //     fprintf(stderr, "Failed to initialize NanoVG\n");
-    //     glfwTerminate();
-    //     return -1;
-    // }
-
-    // Load font
-    // int fontNormal = nvgCreateFont(vg, "sans", "./fonts/SpaceMonoNerdFont.ttf");
-    // if (fontNormal == -1) {
-    //     printf("Could not add font.\n");
-    //     return -1;
-    // }
-    //
-    // int fontIcon = nvgCreateFont(vg, "icon", "./fonts/feather.ttf");
-    // if (fontIcon == -1) {
-    //     printf("Could not add font.\n");
-    //     return -1;
-    // }
-
-    // glfwSetTime(0);
     glfwSwapInterval(1);
 
     ui_create();
@@ -366,8 +340,6 @@ int main() {
     gfx_animation_clean();
 
     ui_delete();
-    // Cleanup
-    // nvgDeleteGL3(vg);
 
     glfwTerminate();
 

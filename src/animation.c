@@ -1,10 +1,9 @@
 #include "animation.h"
 #include <math.h>
-#include <stdio.h>
 
 animation_t anim_st = {0};
 
-bool gfx_animation_push(AnimatedProperty *entry) {
+void gfx_animation_push(AnimatedProperty *entry) {
     animation_t *p_anim = &anim_st;
 
     tween_t t = {
@@ -16,8 +15,22 @@ bool gfx_animation_push(AnimatedProperty *entry) {
         .running_since = 0,
     };
 
-    ARR_PUSH(p_anim->list, t);
-    return true;
+    // init animation list
+    if (p_anim->list == NULL) {
+        if (p_anim->capacity)
+            p_anim->capacity = 10;
+
+        p_anim->list = malloc(p_anim->capacity * sizeof(tween_t));
+        p_anim->size = 0;
+    }
+
+    // add animation
+    if (p_anim->size >= p_anim->capacity) {
+        p_anim->capacity = p_anim->capacity > 0 ? p_anim->capacity * 2 : 1;
+        p_anim->list = realloc(p_anim->list, p_anim->capacity * sizeof(tween_t));
+    }
+
+    p_anim->list[p_anim->size++] = t;
 }
 
 float easeOutBounce(float x) {
@@ -46,8 +59,8 @@ float ease(float x) { return x * x * (3 - 2 * x); }
 void gfx_animation_update(float current_time) {
     animation_t *p_anim = &anim_st;
 
-    // printf("animations: %zu\n", ARR_LEN(p_anim->list));
-    for (int i = 0; i < ARR_LEN(p_anim->list); ++i) {
+    // printf("animations: %zu\n", p_anim->size);
+    for (int i = 0; i < p_anim->size; ++i) {
         tween_t *tween = &p_anim->list[i];
 
         float elapsed = current_time - tween->start_time;
@@ -56,7 +69,18 @@ void gfx_animation_update(float current_time) {
         float t = tween->running_since / tween->duration;
         if (t >= 1.0f) {
             *tween->subject = tween->target_value;
-            ARR_REMOVE(p_anim->list, i);
+
+            { // remove animation
+                if (i < 0 || i >= p_anim->size)
+                    continue;
+
+                for (int idx = i; idx < p_anim->size - 1; idx++) {
+                    p_anim->list[idx] = p_anim->list[idx + 1]; // Shift elements left
+                }
+
+                (p_anim->size)--;
+            }
+
             i--;
         } else {
             float eased = ease(t);
@@ -70,6 +94,7 @@ void gfx_animation_clean() {
     animation_t *p_anim = &anim_st;
     if (!p_anim)
         return;
-    ARR_FREE(p_anim->list);
+    // clean animation
+    free(p_anim->list);
     memset(p_anim, 0, sizeof(*p_anim));
 }
