@@ -1,0 +1,16 @@
+# XMB File Manager
+
+an attempt to make a file manager with a UI resembling XMB (XrossMediaBar) more known as PS3 UI.
+
+it's using OpenGL, FreeType, GLFW
+
+# Keybindings
+
+- Arrow Keys: up and down for vertical menu, left|right for horizontal menu.
+- Enter: open directory, open file using `xdg-open` (not fully tested).
+- Backspace: navigate to parent directory.
+- i: to see file info.
+- p: preview first 500 char of a file if detected as text file. (not always working)
+- +/-: switch the themes
+
+
