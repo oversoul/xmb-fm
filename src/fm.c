@@ -490,38 +490,47 @@ int find_index_of(FileManager *fm, const char *path, int default_index) {
     return default_index;
 }
 
-// Simple function to display file manager contents to console (for testing)
-void display_directory(FileManager *fm) {
-    if (!fm || !fm->current_dir) {
-        printf("No directory to display\n");
-        return;
-    }
-
-    printf("Current directory: %s\n", fm->current_dir->path);
-    printf("--------------------------------------------------\n");
-
-    for (size_t i = 0; i < fm->current_dir->child_count; i++) {
-        FileEntry *entry = fm->current_dir->children[i];
-        char type_char = entry->type == 1 ? 'd' : (entry->type == 2 ? 'l' : 'f');
-
-        printf("%c %s%s (%zu bytes)\n", type_char, entry->name, entry->type == 1 ? "/" : "", entry->size);
-    }
-
-    printf("--------------------------------------------------\n");
-}
+// bool is_text_file(const char *filename, char *buffer, int len) {
+//     FILE *file = fopen(filename, "rb");
+//     if (!file)
+//         return false; // Error opening file
+//
+//     size_t bytesRead = fread(buffer, 1, len, file);
+//     fclose(file);
+//
+//     for (size_t i = 0; i < bytesRead; i++) {
+//         if (buffer[i] < 8 || (buffer[i] > 13 && buffer[i] < 32) || buffer[i] == 127) {
+//             return false; // Likely binary (image, executable, etc.)
+//         }
+//     }
+//     return true;
+// }
 
 bool is_text_file(const char *filename, char *buffer, int len) {
     FILE *file = fopen(filename, "rb");
     if (!file)
-        return false; // Error opening file
+        return false;
 
-    size_t bytesRead = fread(buffer, 1, len, file);
+    size_t bytesRead = fread(buffer, 1, len - 1, file);
+    buffer[bytesRead] = '\0';
     fclose(file);
 
+    if (bytesRead == 0)
+        return false;
+
     for (size_t i = 0; i < bytesRead; i++) {
-        if (buffer[i] < 8 || (buffer[i] > 13 && buffer[i] < 32) || buffer[i] == 127) {
-            return false; // Likely binary (image, executable, etc.)
-        }
+        if (buffer[i] == '\0')
+            return false;
     }
-    return true;
+
+    // Check the ratio of printable to non-printable characters
+    int printable = 0;
+
+    for (size_t i = 0; i < bytesRead; i++) {
+        unsigned char c = (unsigned char)buffer[i];
+        if (c == '\n' || c == '\r' || c == '\t' || (c >= 32 && c <= 126))
+            printable++;
+    }
+
+    return (printable >= bytesRead * 0.7);
 }
