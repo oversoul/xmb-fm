@@ -866,8 +866,157 @@ void ui_create() {
 
     free(indices);
 
+    // ribbon
+    glGenBuffers(1, &renderState.ribbon_vertex_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, renderState.ribbon_vertex_buffer);
+
+    //
+
+    static const char *ribbon_vertex_shader_text = GLSL( //
+        uniform float time;                              //
+        layout(location = 0) in vec2 VertexCoord;        //
+        out vec3 vEC;                                    //
+
+        float iqhash(float n) { return fract(sin(n) * 43758.5453); }
+
+        float noise(vec3 x) {
+            vec3 p = floor(x);
+            vec3 f = fract(x);
+            f = f * f * (3.0 - 2.0 * f);
+            float n = p.x + p.y * 57.0 + 113.0 * p.z;
+            return mix(mix(mix(iqhash(n), iqhash(n + 1.0), f.x), mix(iqhash(n + 57.0), iqhash(n + 58.0), f.x), f.y),
+                       mix(mix(iqhash(n + 113.0), iqhash(n + 114.0), f.x),
+                           mix(iqhash(n + 170.0), iqhash(n + 171.0), f.x), f.y),
+                       f.z);
+        }
+
+        float xmb_noise2(vec3 x) { return cos(x.z * 4.0) * cos(x.z + time / 10.0 + x.x); }
+
+        void main() {
+            vec3 v = vec3(VertexCoord.x, 0.0, VertexCoord.y);
+            vec3 v2 = v;
+            vec3 v3 = v;
+
+            v.y = xmb_noise2(v2) / 8.0;
+
+            v3.x -= time / 5.0;
+            v3.x /= 4.0;
+
+            v3.z -= time / 10.0;
+            v3.y -= time / 100.0;
+
+            v.z -= noise(v3 * 7.0) / 15.0;
+            v.y -= noise(v3 * 7.0) / 15.0 + cos(v.x * 2.0 - time / 2.0) / 5.0 - 0.3;
+            v.y = -v.y;
+
+            vEC = v;
+            gl_Position = vec4(v, 1.0);
+        });
+
+    static const char *ribbon_fragment_shader_text = GLSL( //
+
+        uniform float time;
+
+        in vec3 vEC; //
+        out vec4 FragColor;
+
+        void main() {
+            const vec3 up = vec3(0.0, 0.0, 1.0);
+            vec3 x = dFdx(vEC);
+            vec3 y = dFdy(vEC);
+            vec3 normal = normalize(cross(x, y));
+            float c = 1.0 - dot(normal, up);
+            c = (1.0 - cos(c * c)) / 3.0;
+            FragColor = vec4(1.0, 1.0, 1.0, c * 1.5);
+        });
+
+#define X_SEGMENTS 128
+#define Y_SEGMENTS 32
+#define VERTEX_COUNT ((X_SEGMENTS + 1) * (Y_SEGMENTS + 1))
+#define INDEX_COUNT (X_SEGMENTS * Y_SEGMENTS * 6)
+
+    float ribbon_vertices[VERTEX_COUNT * 2];
+    size_t i = 0;
+    for (int y = 0; y <= Y_SEGMENTS; ++y) {
+        for (int x = 0; x <= X_SEGMENTS; ++x) {
+            float u = (float)x / X_SEGMENTS;
+            float v = (float)y / Y_SEGMENTS;
+            float px = u * 2.0f - 1.0f;
+            float py = v * 2.0f - 1.0f;
+            ribbon_vertices[i++] = px;
+            ribbon_vertices[i++] = py;
+        }
+    }
+
+    glGenBuffers(1, &renderState.ribbon_vertex_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, renderState.ribbon_vertex_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * VERTEX_COUNT * 2, ribbon_vertices, GL_STATIC_DRAW);
+
+    const GLuint ribbon_vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(ribbon_vertex_shader, 1, &ribbon_vertex_shader_text, NULL);
+    glCompileShader(ribbon_vertex_shader);
+    check_shader_error(ribbon_vertex_shader, "vertex");
+
+    const GLuint ribbon_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(ribbon_fragment_shader, 1, &ribbon_fragment_shader_text, NULL);
+    glCompileShader(ribbon_fragment_shader);
+    check_shader_error(ribbon_fragment_shader, "fragment");
+
+    renderState.ribbon_program = glCreateProgram();
+    glAttachShader(renderState.ribbon_program, ribbon_vertex_shader);
+    glAttachShader(renderState.ribbon_program, ribbon_fragment_shader);
+    glLinkProgram(renderState.ribbon_program);
+
+    glDeleteShader(ribbon_vertex_shader);
+    glDeleteShader(ribbon_fragment_shader);
+
+    glGenVertexArrays(1, &renderState.ribbon_vertex_array);
+    glBindVertexArray(renderState.ribbon_vertex_array);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
+
+    uint32_t *ribbon_indices = malloc(sizeof(GLuint) * INDEX_COUNT);
+    uint32_t ribbon_offset = 0;
+    for (int y = 0; y < Y_SEGMENTS; ++y) {
+        for (int x = 0; x < X_SEGMENTS; ++x) {
+            int i0 = y * (X_SEGMENTS + 1) + x;
+            int i1 = i0 + 1;
+            int i2 = i0 + (X_SEGMENTS + 1);
+            int i3 = i2 + 1;
+
+            // Triangle 1
+            ribbon_indices[ribbon_offset++] = i0;
+            ribbon_indices[ribbon_offset++] = i2;
+            ribbon_indices[ribbon_offset++] = i1;
+
+            // Triangle 2
+            ribbon_indices[ribbon_offset++] = i1;
+            ribbon_indices[ribbon_offset++] = i2;
+            ribbon_indices[ribbon_offset++] = i3;
+        }
+    }
+
+    GLuint ribbon_ebo;
+    glGenBuffers(1, &ribbon_ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ribbon_ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * INDEX_COUNT, ribbon_indices, GL_STATIC_DRAW);
+
+    free(ribbon_indices);
+
     // Create the font atlas
     create_font_atlas();
+}
+
+void render_ribbon(float width, float height, float time) {
+    glUseProgram(renderState.ribbon_program);
+    glUniform1f(glGetUniformLocation(renderState.ribbon_program, "time"), time);
+
+    glBindVertexArray(renderState.ribbon_vertex_array);
+    glBindBuffer(GL_ARRAY_BUFFER, renderState.ribbon_vertex_buffer);
+    // glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(renderState.ribbon_verts), renderState.ribbon_verts);
+
+    glDrawElements(GL_TRIANGLES, INDEX_COUNT, GL_UNSIGNED_INT, 0);
 }
 
 void start_frame(float width, float height) {

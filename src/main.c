@@ -185,42 +185,42 @@ void initialize_menu_data() {
     // Users category
     strcpy(horizontalItems[0].title, "Home");
     strcpy(horizontalItems[0].path, homedir);
-    strcpy(horizontalItems[0].icon, "");
+    strcpy(horizontalItems[0].icon, "\ue977");
 
     // Settings category
     strcpy(horizontalItems[1].title, "Desktop");
     sprintf(horizontalItems[1].path, "%s/%s", homedir, "Desktop");
-    strcpy(horizontalItems[1].icon, "");
+    strcpy(horizontalItems[1].icon, "\ue9b7");
 
     // Add more categories like in the Vue code
     strcpy(horizontalItems[2].title, "Documents");
     sprintf(horizontalItems[2].path, "%s/%s", homedir, "Documents");
-    strcpy(horizontalItems[2].icon, "");
+    strcpy(horizontalItems[2].icon, "\ue909");
 
     // Songs category
     strcpy(horizontalItems[3].title, "Downloads");
     sprintf(horizontalItems[3].path, "%s/%s", homedir, "Downloads");
-    strcpy(horizontalItems[3].icon, "");
+    strcpy(horizontalItems[3].icon, "\ue95f");
 
     // Movies category
     strcpy(horizontalItems[4].title, "Pictures");
     sprintf(horizontalItems[4].path, "%s/%s", homedir, "Pictures");
-    strcpy(horizontalItems[4].icon, "");
+    strcpy(horizontalItems[4].icon, "\ue978");
 
     // Games category
     strcpy(horizontalItems[5].title, "Public");
     sprintf(horizontalItems[5].path, "%s/%s", homedir, "Public");
-    strcpy(horizontalItems[5].icon, "");
+    strcpy(horizontalItems[5].icon, "\ueA07");
 
     // Network category
     strcpy(horizontalItems[6].title, "Videos");
     sprintf(horizontalItems[6].path, "%s/%s", homedir, "Videos");
-    strcpy(horizontalItems[6].icon, "󰯜");
+    strcpy(horizontalItems[6].icon, "\ue94d");
 
     // Friends category
     strcpy(horizontalItems[7].title, "File System");
     strcpy(horizontalItems[7].path, "/");
-    strcpy(horizontalItems[7].icon, "");
+    strcpy(horizontalItems[7].icon, "\ue958");
 
     fm = create_file_manager(horizontalItems[hr_list.selected].path);
 
@@ -315,8 +315,8 @@ int main() {
         glfwGetWindowSize(window, &winWidth, &winHeight);
 
         start_frame(width, height);
-
         draw_background(state.width, state.height, theme);
+
         draw_folder_path(&hr_list, fm->current_dir->path, 200, 160);
         draw_vertical_list(&vr_list, 190);
         draw_horizontal_menu(&hr_list, 180, 150);
@@ -330,6 +330,8 @@ int main() {
         }
 
         end_frame();
+
+        render_ribbon(state.width, state.height, current_time);
 
         // Swap buffers
         glfwSwapBuffers(window);

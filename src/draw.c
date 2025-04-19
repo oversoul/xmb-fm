@@ -232,7 +232,7 @@ void draw_horizontal_menu(const HorizontalList *hr_list, int x, int y) {
         end_rect();
 
         // icon
-        use_font("sans");
+        use_font("icon");
         float fsize = 30 * scale_factor;
         Color icon_color = {0, 0, 0, 1.0};
 
@@ -242,6 +242,7 @@ void draw_horizontal_menu(const HorizontalList *hr_list, int x, int y) {
         return;
     }
 
+    use_font("icon");
     Color iconColor = {0, 0.07, 0.19, 1};
     for (int i = 0; i < hr_list->items_count; i++) {
         float size = 50;
@@ -265,11 +266,15 @@ void draw_horizontal_menu(const HorizontalList *hr_list, int x, int y) {
         end_rect();
 
         // icon
-        float fsize = 30 * scale_factor;
+        float fsize = 20 * scale_factor;
 
-        float w, h;
-        get_text_bounds(fsize, hr_list->items[i].icon, &w, &h, NULL, NULL);
-        draw_text(fsize, x - w / 2, y + h / 2, hr_list->items[i].icon, iconColor);
+        float w, h, by, sx;
+        get_text_bounds(fsize, hr_list->items[i].icon, &w, &h, &sx, &by);
+
+        float ty = y + by / 2;
+        float tx = x - w / 2 - sx;
+
+        draw_text(fsize, tx, ty, hr_list->items[i].icon, iconColor);
     }
 }
 
@@ -296,7 +301,6 @@ void draw_vertical_list(const VerticalList *list, float start_x) {
         float size = list->icon_size + (node->zoom == 1 ? 10 : 0);
 
         use_font("icon");
-
         draw_text(size, x - size / 2, y + size / 2 - 2, node->type == TYPE_DIRECTORY ? "\ue950" : "\ue96d", icon_color);
 
         Color text_color = {1, 1, 1, node->label_alpha};

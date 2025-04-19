@@ -84,6 +84,10 @@ typedef struct {
     uint32_t vertex_buffer;
     uint32_t vertex_array;
 
+    uint32_t ribbon_program;
+    uint32_t ribbon_vertex_array;
+    uint32_t ribbon_vertex_buffer;
+
     FontAtlas* font_atlas;
     int current_font;
 } RenderState;
@@ -109,6 +113,7 @@ void rect_radius_all(float value);
 void end_rect();
 void ui_create();
 void start_frame(float width, float height) ;
+void render_ribbon(float width, float height, float current_time);
 void ui_delete();
 void end_frame();
 
