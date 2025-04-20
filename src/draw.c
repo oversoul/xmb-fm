@@ -167,39 +167,6 @@ void draw_background(float width, float height, int theme) {
     Color *bg = bgs[theme];
     rect_gradient4(bg[2], bg[3], bg[1], bg[0]);
     end_rect();
-
-    // Simple blue gradient background
-    // NVGpaint bg_paint = nvgLinearGradient(vg, 0, 0, 0, height, nvgRGBA(0, 20, 50, 255), nvgRGBA(0, 10, 30, 255));
-    // nvgBeginPath(vg);
-    // nvgRect(vg, 0, 0, width, height);
-    // nvgFillPaint(vg, bg_paint);
-    // nvgFill(vg);
-    //
-    // // Add animated wave effect
-    // float time = glfwGetTime();
-    // for (int i = 0; i < 5; i++) {
-    //     float alpha = 0.12f - i * 0.02f;
-    //     float offset = i * 80.0f;
-    //     float amplitude = 25.0f - i * 4.0f;
-    //     float frequency = 0.006f + i * 0.001f;
-    //     float speed = 0.7f + i * 0.1f;
-    //
-    //     nvgBeginPath(vg);
-    //     nvgMoveTo(vg, 0, height * 0.7f + sinf(time * speed) * amplitude + offset);
-    //
-    //     for (int x = 0; x <= width; x += 15) {
-    //         float y = height * 0.7f + sinf(time * speed + x * frequency) * amplitude + offset;
-    //         nvgLineTo(vg, x, y);
-    //     }
-    //
-    //     nvgLineTo(vg, width, height);
-    //     nvgLineTo(vg, 0, height);
-    //     nvgClosePath(vg);
-    //
-    //     NVGcolor wave_color = nvgRGBAf(0.2f, 0.6f, 1.0f, alpha);
-    //     nvgFillColor(vg, wave_color);
-    //     nvgFill(vg);
-    // }
 }
 
 void draw_selected_item_title(const HorizontalList *hr_list) {

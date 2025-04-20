@@ -180,7 +180,6 @@ bool add_new_line(FontAtlas *atlas) {
     return true;
 }
 
-// Render a glyph to the atlas using FreeType
 int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint) {
     // Check if font_id is valid
     if (font_id < 0 || font_id >= atlas->font_count) {
@@ -275,24 +274,18 @@ int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint)
     glyph->size = size;
     glyph->used = true;
 
-    // Copy bitmap to atlas, handling pitch (row stride)
+    // Copy bitmap to atlas
     for (int j = 0; j < height; j++) {
         for (int i = 0; i < width; i++) {
             atlas->pixels[(glyph->y + j) * atlas->width + (glyph->x + i)] = bitmap.buffer[j * bitmap.pitch + i];
         }
     }
 
-    // Update atlas position
     atlas->current_x += width + 1; // +1 for padding
-
-    // Mark atlas as needing update
     atlas->dirty = true;
-
-    // Return the glyph index
     return atlas->glyph_count++;
 }
 
-// Update the OpenGL texture if the atlas is dirty
 void update_atlas_texture(FontAtlas *atlas) {
     if (!atlas->dirty)
         return;
@@ -303,7 +296,6 @@ void update_atlas_texture(FontAtlas *atlas) {
     atlas->dirty = false;
 }
 
-// Decode a UTF-8 character and advance pointer
 unsigned int decode_utf8(const char **text) {
     unsigned int c = (unsigned char)**text;
 
@@ -465,7 +457,6 @@ void draw_wrapped_text(float size, float x, float y, const char *text, Color col
     float line_y = y;
     float line_height = size * 1.5f; // Adjust line spacing as needed
 
-    // Process each glyph
     for (int i = 0; i <= glyph_count; i++) {
         // Check if we're at the end or have a space
         bool is_space = false;
@@ -482,7 +473,6 @@ void draw_wrapped_text(float size, float x, float y, const char *text, Color col
                 cursor_x += glyph->xadvance;
             }
 
-            // Remember position of the last space
             if (is_space) {
                 last_space = i;
             }
@@ -492,18 +482,13 @@ void draw_wrapped_text(float size, float x, float y, const char *text, Color col
         if (is_end || is_linebreak || cursor_x > max_width) {
             int line_end;
 
-            // Determine where to break the line
             if (is_linebreak) {
-                // Break exactly at the newline character
                 line_end = i + 1;
             } else if (cursor_x > max_width && last_space > line_start) {
-                // Break at the last space
                 line_end = last_space;
             } else if (is_end) {
-                // End of text, include all remaining glyphs
                 line_end = glyph_count;
             } else {
-                // No space found, force break at current position
                 line_end = i;
             }
 
@@ -537,17 +522,14 @@ void draw_wrapped_text(float size, float x, float y, const char *text, Color col
                 cursor_x += glyphs[j].xadvance;
             }
 
-            // If we just processed the end, we're done
             if (is_end)
                 break;
         }
     }
 
-    // Free the glyphs
     free(glyphs);
 }
 
-// Draw text using the atlas
 void draw_text(float size, float x, float y, const char *text, Color color) {
     // Get glyphs for the string
     GlyphInfo *glyphs;
@@ -567,7 +549,6 @@ void draw_text(float size, float x, float y, const char *text, Color color) {
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, atlas->texture_id);
 
-    // Current position
     float cursor_x = x;
     float cursor_y = y;
 
@@ -576,10 +557,8 @@ void draw_text(float size, float x, float y, const char *text, Color color) {
 
         draw_glyph(cursor_x, cursor_y, color, glyph, atlas->width, atlas->height);
 
-        // Move cursor
         cursor_x += glyph->xadvance;
 
-        // Kerning could be added here
         if (i < glyph_count - 1) {
             FontInfo *font = &atlas->fonts[font_id];
             FT_Vector kerning;
@@ -593,7 +572,6 @@ void draw_text(float size, float x, float y, const char *text, Color color) {
         }
     }
 
-    // Free temporary glyph array
     free(glyphs);
 }
 
@@ -603,24 +581,19 @@ void destroy_font_atlas() {
     if (!atlas)
         return;
 
-    // Free pixel data
     free(atlas->pixels);
 
-    // Free FreeType resources
     for (int i = 0; i < atlas->font_count; i++) {
         FT_Done_Face(atlas->fonts[i].face);
     }
+
     FT_Done_FreeType(atlas->ft_library);
 
-    // Free glyph array
     free(atlas->glyphs);
 
-    // Delete OpenGL texture
     glDeleteTextures(1, &atlas->texture_id);
 
     renderState.current_font = -1;
-
-    // Free the atlas struct
     free(atlas);
 }
 
@@ -733,7 +706,6 @@ void ui_create() {
             ndc.y = -ndc.y; // Flip Y
             gl_Position = vec4(ndc, 0.0, 1.0);
 
-            // Pass through data to fragment shader
             frag_local_pos = screenPos;
             frag_rect_pos = aPos;
             frag_rect_size = vSize;
@@ -1014,7 +986,6 @@ void render_ribbon(float width, float height, float time) {
 
     glBindVertexArray(renderState.ribbon_vertex_array);
     glBindBuffer(GL_ARRAY_BUFFER, renderState.ribbon_vertex_buffer);
-    // glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(renderState.ribbon_verts), renderState.ribbon_verts);
 
     glDrawElements(GL_TRIANGLES, INDEX_COUNT, GL_UNSIGNED_INT, 0);
 }

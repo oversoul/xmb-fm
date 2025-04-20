@@ -7,7 +7,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-// Create a new file entry from path
 FileEntry *create_file_entry(const char *path) {
     FileEntry *entry = (FileEntry *)malloc(sizeof(FileEntry));
     if (!entry)
@@ -35,13 +34,12 @@ FileEntry *create_file_entry(const char *path) {
         entry->owner = st.st_uid;
         entry->group = st.st_gid;
 
-        // Determine file type
         if (S_ISDIR(st.st_mode))
-            entry->type = 1; // Directory
+            entry->type = TYPE_DIRECTORY;
         else if (S_ISLNK(st.st_mode))
-            entry->type = 2; // Symlink
+            entry->type = TYPE_SYMLINK;
         else
-            entry->type = 0; // Regular file
+            entry->type = TYPE_FILE;
     }
 
     entry->children = NULL;
@@ -51,7 +49,6 @@ FileEntry *create_file_entry(const char *path) {
     return entry;
 }
 
-// Free a file entry and optionally its children
 void free_file_entry(FileEntry *entry, bool recursive) {
     if (!entry)
         return;
@@ -80,7 +77,6 @@ static int compare_by_name(const void *a, const void *b) {
     return strcasecmp(entry_a->name, entry_b->name);
 }
 
-// Compare function for sorting by size
 static int compare_by_size(const void *a, const void *b) {
     FileEntry *entry_a = *(FileEntry **)a;
     FileEntry *entry_b = *(FileEntry **)b;
@@ -131,7 +127,6 @@ int read_directory(FileEntry *dir) {
         return -1;
     }
 
-    // Count entries first to allocate array
     struct dirent *entry;
     size_t count = 0;
 
@@ -145,7 +140,6 @@ int read_directory(FileEntry *dir) {
         count++;
     }
 
-    // Allocate array
     dir->children = (FileEntry **)malloc(count * sizeof(FileEntry *));
     if (!dir->children) {
         closedir(d);
@@ -182,7 +176,6 @@ int read_directory(FileEntry *dir) {
     return 0;
 }
 
-// Copy a file or directory
 int copy_entry(FileEntry *source, const char *dest_path) {
     if (!source || !dest_path)
         return -1;
@@ -190,7 +183,7 @@ int copy_entry(FileEntry *source, const char *dest_path) {
     char target[1024];
     snprintf(target, sizeof(target), "%s/%s", dest_path, source->name);
 
-    if (source->type == 0) { // Regular file
+    if (source->type == TYPE_FILE) { // Regular file
         FILE *src = fopen(source->path, "rb");
         if (!src)
             return -1;
@@ -216,7 +209,7 @@ int copy_entry(FileEntry *source, const char *dest_path) {
         chown(target, source->owner, source->group);
 
         return 0;
-    } else if (source->type == 1) { // Directory
+    } else if (source->type == TYPE_DIRECTORY) { // Directory
         // Create target directory
         mkdir(target, source->permissions);
         chown(target, source->owner, source->group);
@@ -237,7 +230,6 @@ int copy_entry(FileEntry *source, const char *dest_path) {
     return -1; // Unsupported file type
 }
 
-// Move a file or directory
 int move_entry(FileEntry *source, const char *dest_path) {
     if (!source || !dest_path)
         return -1;
@@ -245,7 +237,7 @@ int move_entry(FileEntry *source, const char *dest_path) {
     char target[1024];
     snprintf(target, sizeof(target), "%s/%s", dest_path, source->name);
 
-    // Try simple rename first (works if on same filesystem)
+    // Try simple rename first
     if (rename(source->path, target) == 0) {
         return 0;
     }
@@ -263,11 +255,11 @@ int delete_entry(FileEntry *entry) {
     if (!entry)
         return -1;
 
-    if (entry->type == 0) { // Regular file
+    if (entry->type == TYPE_FILE) {
         if (unlink(entry->path) != 0) {
             return -1;
         }
-    } else if (entry->type == 1) { // Directory
+    } else if (entry->type == TYPE_DIRECTORY) {
         // Make sure children are loaded
         if (!entry->children) {
             read_directory(entry);
@@ -287,7 +279,6 @@ int delete_entry(FileEntry *entry) {
     return 0;
 }
 
-// Create a new directory
 int create_directory(const char *path) {
     if (!path)
         return -1;
@@ -300,7 +291,6 @@ int create_directory(const char *path) {
     return 0;
 }
 
-// Create a new file manager
 FileManager *create_file_manager(const char *start_path) {
     FileManager *fm = (FileManager *)malloc(sizeof(FileManager));
     if (!fm)
@@ -342,7 +332,6 @@ FileManager *create_file_manager(const char *start_path) {
     return fm;
 }
 
-// Clean up file manager
 void free_file_manager(FileManager *fm) {
     if (!fm)
         return;
@@ -398,7 +387,6 @@ void change_directory(FileManager *fm, const char *path) {
     sort_entries(fm);
 }
 
-// Refresh current directory contents
 void refresh_current_dir(FileManager *fm) {
     if (!fm || !fm->current_dir)
         return;
@@ -413,12 +401,10 @@ void refresh_current_dir(FileManager *fm) {
     sort_entries(fm);
 }
 
-// Sort entries according to current sort mode
 void sort_entries(FileManager *fm) {
     if (!fm || !fm->current_dir || !fm->current_dir->children)
         return;
 
-    // Choose comparison function based on sort mode
     int (*compare_func)(const void *, const void *);
 
     switch (fm->sort_mode) {
@@ -447,7 +433,6 @@ void sort_entries(FileManager *fm) {
     }
 }
 
-// Toggle showing hidden files
 void toggle_hidden_files(FileManager *fm) {
     if (!fm)
         return;
@@ -456,7 +441,6 @@ void toggle_hidden_files(FileManager *fm) {
     refresh_current_dir(fm);
 }
 
-// Go back in history
 void go_back(FileManager *fm) {
     if (!fm || fm->history_pos <= 0)
         return;
@@ -468,7 +452,6 @@ void go_back(FileManager *fm) {
     refresh_current_dir(fm);
 }
 
-// Go forward in history
 void go_forward(FileManager *fm) {
     if (!fm || fm->history_pos >= fm->history_size - 1 || !fm->history[fm->history_pos + 1])
         return;
@@ -489,22 +472,6 @@ int find_index_of(FileManager *fm, const char *path, int default_index) {
 
     return default_index;
 }
-
-// bool is_text_file(const char *filename, char *buffer, int len) {
-//     FILE *file = fopen(filename, "rb");
-//     if (!file)
-//         return false; // Error opening file
-//
-//     size_t bytesRead = fread(buffer, 1, len, file);
-//     fclose(file);
-//
-//     for (size_t i = 0; i < bytesRead; i++) {
-//         if (buffer[i] < 8 || (buffer[i] > 13 && buffer[i] < 32) || buffer[i] == 127) {
-//             return false; // Likely binary (image, executable, etc.)
-//         }
-//     }
-//     return true;
-// }
 
 bool is_text_file(const char *filename, char *buffer, int len) {
     FILE *file = fopen(filename, "rb");
