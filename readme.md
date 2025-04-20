@@ -12,5 +12,5 @@ it's using OpenGL, FreeType, GLFW
 - i: to see file info.
 - p: preview first 500 char of a file if detected as text file. (not always working)
 - +/-: switch the themes
-
+- PAGE_UP/PAGE_DOWN: scroll up and down by 10.
 

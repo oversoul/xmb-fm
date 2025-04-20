@@ -128,6 +128,21 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
             vr_list_update();
         }
     } break;
+    case GLFW_KEY_PAGE_UP: {
+        if (vr_list.selected > 0) {
+            vr_list.selected = vr_list.selected > 10 ? vr_list.selected - 10 : 0;
+
+            vr_list_update();
+        }
+    } break;
+    case GLFW_KEY_PAGE_DOWN: {
+        if (vr_list.selected < vr_list.entry_end - 1) {
+            vr_list.selected =
+                vr_list.selected < vr_list.entry_end - 10 ? vr_list.selected + 10 : vr_list.entry_end - 1;
+
+            vr_list_update();
+        }
+    } break;
 
     case GLFW_KEY_P: {
         struct file_entry *current = fm->current_dir->children[vr_list.selected];
