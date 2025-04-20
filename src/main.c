@@ -309,9 +309,8 @@ int main() {
         return -1;
     }
 
-    int fontIcon = register_font("icon", "./fonts/feather.ttf");
-    if (fontIcon == -1) {
-        printf("Could not add font.\n");
+    if (register_font("icon", "./fonts/feather.ttf") < 0) {
+        fprintf(stderr, "Failed to register font icon\n");
         ui_delete();
         return -1;
     }
