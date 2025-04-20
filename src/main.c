@@ -143,6 +143,14 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
             vr_list_update();
         }
     } break;
+    case GLFW_KEY_HOME: {
+        vr_list.selected = 0;
+        vr_list_update();
+    } break;
+    case GLFW_KEY_END: {
+        vr_list.selected = vr_list.items_count - 1;
+        vr_list_update();
+    } break;
 
     case GLFW_KEY_P: {
         struct file_entry *current = fm->current_dir->children[vr_list.selected];
