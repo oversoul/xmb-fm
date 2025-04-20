@@ -200,12 +200,16 @@ void draw_horizontal_menu(const HorizontalList *hr_list, int x, int y) {
 
         // icon
         use_font("icon");
-        float fsize = 30 * scale_factor;
+        float fsize = 20 * scale_factor;
         Color icon_color = {0, 0, 0, 1.0};
 
-        float w, h;
-        get_text_bounds(fsize, hr_list->items[hr_list->selected].icon, &w, &h, NULL, NULL);
-        draw_text(fsize, x - w / 2, y + h / 2, hr_list->items[hr_list->selected].icon, icon_color);
+        float w, h, by, sx;
+        get_text_bounds(fsize, hr_list->items[hr_list->selected].icon, &w, &h, &sx, &by);
+
+        float ty = y + by / 2;
+        float tx = x - w / 2 - sx;
+        draw_text(fsize, tx, ty, hr_list->items[hr_list->selected].icon, icon_color);
+
         return;
     }
 
@@ -283,10 +287,13 @@ void draw_vertical_list(const VerticalList *list, float start_x) {
             name[strlen(node->name)] = '\0';
         }
 
-        float w, h;
+        float w, h, by, sx;
         float fsize = 12 + (node->zoom == 1 ? 4 : 0);
-        get_text_bounds(fsize, name, &w, &h, NULL, NULL);
-        draw_text(fsize, x + 50, y + h / 2 - 4, name, text_color);
+        get_text_bounds(fsize, name, &w, &h, &sx, &by);
+
+        float ty = y + by / 2;
+        float tx = x - sx;
+        draw_text(fsize, tx + 50, ty, name, text_color);
     }
 
     // selected item always in place

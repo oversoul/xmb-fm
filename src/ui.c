@@ -1,4 +1,5 @@
 #include "ui.h"
+#include <math.h>
 #include <string.h>
 
 #define GL_GLEXT_PROTOTYPES
@@ -241,22 +242,27 @@ int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint)
     int width = bitmap.width;
     int height = bitmap.rows;
 
-    // Ensure we have space in the glyph array
+    // Get the font's global metrics for this size
+    float ascender = font->face->size->metrics.ascender / 64.0f;
+    float descender = font->face->size->metrics.descender / 64.0f;
+
+    float padding = 1.0f;
+    int total_height = (int)ceil(ascender - descender) + (int)padding;
+    int final_height = height > total_height ? height : total_height;
+
     if (atlas->glyph_count >= atlas->glyph_capacity) {
         atlas->glyph_capacity *= 2;
         atlas->glyphs = (GlyphInfo *)realloc(atlas->glyphs, atlas->glyph_capacity * sizeof(GlyphInfo));
     }
 
-    // Check if this glyph fits on current line
     if (atlas->current_x + width > atlas->width) {
         if (!add_new_line(atlas)) {
             return -1;
         }
     }
 
-    // Adjust line height if needed
-    if (height > atlas->current_line_height) {
-        atlas->current_line_height = height;
+    if (final_height > atlas->current_line_height) {
+        atlas->current_line_height = final_height;
     }
 
     // Add glyph info
@@ -265,7 +271,7 @@ int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint)
     glyph->y = atlas->current_y;
 
     glyph->width = width;
-    glyph->height = bitmap.rows + 2; // hack: text appears cropped
+    glyph->height = final_height;
     glyph->xoff = (float)slot->bitmap_left;
     glyph->yoff = (float)-slot->bitmap_top;           // Negative because FreeType's Y is up
     glyph->xadvance = (float)slot->advance.x / 64.0f; // Convert from 26.6 format
@@ -380,10 +386,7 @@ void get_string_glyphs(FontAtlas *atlas, int font_id, float size, const char *te
         }
     }
 
-    // Update actual count (in case some glyphs failed)
     *count = idx;
-
-    // Update texture if needed
     update_atlas_texture(atlas);
 }
 
