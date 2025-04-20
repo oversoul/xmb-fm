@@ -308,15 +308,18 @@ void draw_vertical_list(const VerticalList *list, float start_x) {
 }
 
 void draw_text_preview(const char *text, float width, float height) {
-    float x = 40;
-    float y = 40;
-    width -= 80;
-    height -= 80;
+    begin_rect(0, 0);
+    rect_size(width, height);
+    rect_color(0, 0, 0, .8);
+    end_rect();
+
+    float x = width / 10;
+    float y = height / 10;
 
     begin_rect(x, y);
-    rect_size(width, height);
+    rect_size(width - 2 * x, height - 2 * y);
     rect_radius(20, 20, 20, 20);
-    rect_color(0, 0, 0, .8);
+    rect_color(1, 1, 1, 1);
     end_rect();
 
     float padding = 20;
@@ -326,7 +329,7 @@ void draw_text_preview(const char *text, float width, float height) {
     width -= padding * 2;
 
     use_font("sans");
-    draw_wrapped_text(16, x, y + 10, text, (Color){1, 1, 1, 1}, width);
+    draw_wrapped_text(16, x, y + 10, text, (Color){0, 0, 0, 1}, width);
 }
 
 char *readable_fs(double bytes, char *buf) {
