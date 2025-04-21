@@ -10,8 +10,12 @@
 
 #define GLSL(src) "#version 430\n" #src
 
-typedef struct { float r, g, b, a; } Color;
-typedef struct { float tl, tr, br, bl; } Radius;
+typedef struct {
+    float r, g, b, a;
+} Color;
+typedef struct {
+    float tl, tr, br, bl;
+} Radius;
 
 typedef struct Vertex {
     float pos[2];
@@ -28,7 +32,6 @@ typedef struct Vertex {
 #define FIRST_CHAR 32
 #define LAST_CHAR 126
 #define MAX_CHARS (LAST_CHAR - FIRST_CHAR + 1)
-
 
 // Atlas dimensions
 #define ATLAS_WIDTH 1024
@@ -59,19 +62,19 @@ typedef struct {
 } FontInfo;
 
 typedef struct {
-    unsigned char *pixels;     // Atlas pixel data (single channel)
-    int width, height;         // Atlas dimensions
-    FT_Library ft_library;     // FreeType library instance
-    FontInfo fonts[MAX_FONTS]; // Registered fonts
+    unsigned char *pixels;          // Atlas pixel data (single channel)
+    int width, height;              // Atlas dimensions
+    FT_Library ft_library;          // FreeType library instance
+    FontInfo fonts[MAX_FONTS];      // Registered fonts
     char font_names[MAX_FONTS][60]; // Registered fonts names
-    int font_count;            // Number of registered fonts
-    GlyphInfo *glyphs;         // Array of glyph data
-    int glyph_capacity;        // Capacity of glyph array
-    int glyph_count;           // Number of glyphs in atlas
-    int current_x, current_y;  // Current position for adding glyphs
-    int current_line_height;   // Height of current line
-    GLuint texture_id;         // OpenGL texture ID
-    bool dirty;                // Whether atlas needs updating
+    int font_count;                 // Number of registered fonts
+    GlyphInfo *glyphs;              // Array of glyph data
+    int glyph_capacity;             // Capacity of glyph array
+    int glyph_count;                // Number of glyphs in atlas
+    int current_x, current_y;       // Current position for adding glyphs
+    int current_line_height;        // Height of current line
+    GLuint texture_id;              // OpenGL texture ID
+    bool dirty;                     // Whether atlas needs updating
 } FontAtlas;
 
 typedef struct {
@@ -84,11 +87,7 @@ typedef struct {
     uint32_t vertex_buffer;
     uint32_t vertex_array;
 
-    uint32_t ribbon_program;
-    uint32_t ribbon_vertex_array;
-    uint32_t ribbon_vertex_buffer;
-
-    FontAtlas* font_atlas;
+    FontAtlas *font_atlas;
     int current_font;
 } RenderState;
 
@@ -97,33 +96,30 @@ typedef struct {
 //     2, 3, 0, // tri 2
 // };
 
-
 // Font load_font(const char *path, int pixel_height) ;
 // void font_cleanup(Font* font) ;
 // void add_text(const char *text, float x, float y, Color color) ;
 // float get_text_width(const char *text, float scale) ;
-void begin_rect(float x, float y) ;
-void rect_size(float w, float h) ;
-void rect_color(float r, float g, float b, float a) ;
+void begin_rect(float x, float y);
+void rect_size(float w, float h);
+void rect_color(float r, float g, float b, float a);
 void rect_gradient4(Color tl, Color tr, Color br, Color bl);
 
-
-void rect_radius(float tl, float tr, float br, float bl) ;
+void rect_radius(float tl, float tr, float br, float bl);
 void rect_radius_all(float value);
 void end_rect();
 void ui_create();
-void start_frame(float width, float height) ;
+void start_frame(float width, float height);
 void render_ribbon(float width, float height, float current_time);
 void ui_delete();
 void end_frame();
 
 void add_rect(float x, float y, float w, float h, Color color[4]);
 
-
 void create_font_atlas();
-void use_font(const char* name);
+void use_font(const char *name);
 void draw_wrapped_text(float size, float x, float y, const char *text, Color color, float max_width);
-int register_font(const char* name, const char *filename);
+int register_font(const char *name, const char *filename);
 void get_text_bounds(float size, const char *text, float *width, float *height, float *start_x, float *bearing_y);
 void draw_text(float size, float x, float y, const char *text, Color color);
 void destroy_font_atlas();

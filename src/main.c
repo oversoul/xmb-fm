@@ -1,6 +1,7 @@
 #include "animation.h"
 #include "fm.h"
 #include <GL/glew.h>
+#include "ribbon.h"
 #include "ui.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -314,6 +315,8 @@ int main() {
 
     ui_create();
 
+    init_ribbon();
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -368,7 +371,7 @@ int main() {
 
         end_frame();
 
-        render_ribbon(state.width, state.height, current_time);
+        draw_ribbon(state.width, state.height, current_time);
 
         // Swap buffers
         glfwSwapBuffers(window);
