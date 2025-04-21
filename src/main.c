@@ -355,7 +355,7 @@ int main() {
         draw_background(state.width, state.height, state.theme);
 
         draw_folder_path(&hr_list, fm->current_dir->path, 200, 160);
-        draw_vertical_list(&vr_list, 190);
+        draw_vertical_list(&vr_list, 180);
         draw_horizontal_menu(&hr_list, 180, 150);
 
         if (state.show_preview) {
