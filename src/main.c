@@ -64,6 +64,18 @@ void vr_list_update() {
     update_vertical_list(&vr_list, glfwGetTime());
 }
 
+void read_file_preview(const char *filename, char *buffer, size_t len) {
+    FILE *file = fopen(filename, "rb");
+    if (!file) {
+        fprintf(stderr, "File couldn't be opened.\n");
+        return;
+    }
+
+    size_t bytesRead = fread(buffer, 1, len - 1, file);
+    buffer[bytesRead] = '\0';
+    fclose(file);
+}
+
 // Input handling
 void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action != GLFW_PRESS)
@@ -98,7 +110,7 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
             hr_list_update();
             state.depth = 0;
 
-            change_directory(fm, horizontalItems[hr_list.selected].path);
+            switch_directory(fm, horizontalItems[hr_list.selected].path);
 
             vr_list.selected = 0;
             vr_list_update();
@@ -115,7 +127,7 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
 
             state.depth = 0;
 
-            change_directory(fm, horizontalItems[hr_list.selected].path);
+            switch_directory(fm, horizontalItems[hr_list.selected].path);
 
             vr_list.selected = 0;
             vr_list_update();
@@ -161,7 +173,8 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
 
     case GLFW_KEY_P: {
         struct file_entry *current = fm->current_dir->children[vr_list.selected];
-        if (current->type == TYPE_FILE && is_text_file(current->path, state.buffer, 512)) {
+        if (current->type == TYPE_FILE && get_mime_type(current->path, "text/")) {
+            read_file_preview(current->path, state.buffer, 512);
             state.show_preview = true;
         }
     } break;
@@ -175,11 +188,7 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         if (state.depth == 0)
             hr_list.depth = 0;
 
-        const char *old = fm->current_dir->path;
-
-        go_back(fm);
-
-        vr_list.selected = find_index_of(fm, old, 0);
+        vr_list.selected = navigate_back(fm);
 
         vr_list_update();
 
@@ -197,9 +206,7 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
             vr_list_update();
             hr_list_update();
         } else if (current->type == TYPE_FILE) {
-            char command[1060];
-            sprintf(command, "xdg-open \"%s\" &", current->path);
-            system(command);
+            open_file(current->path);
         }
     } break;
     }

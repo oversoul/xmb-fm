@@ -1,5 +1,4 @@
 #include "fm.h"
-#include "animation.h"
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,8 +6,91 @@
 #include <strings.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <magic.h>
+#include <fcntl.h>
 
-FileEntry *create_file_entry(const char *path) {
+static bool show_file(struct dirent *entry) {
+    if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+        return false;
+    if (entry->d_name[0] == '.')
+        return false;
+    return true;
+}
+
+static int compare_by_name(const void *a, const void *b) {
+    FileEntry *entry_a = *(FileEntry **)a;
+    FileEntry *entry_b = *(FileEntry **)b;
+
+    // Directories first, then files
+    if (entry_a->type == 1 && entry_b->type != 1)
+        return -1;
+    if (entry_a->type != 1 && entry_b->type == 1)
+        return 1;
+
+    return strcasecmp(entry_a->name, entry_b->name);
+}
+
+static int compare_by_size(const void *a, const void *b) {
+    FileEntry *entry_a = *(FileEntry **)a;
+    FileEntry *entry_b = *(FileEntry **)b;
+
+    // Directories first, then files
+    if (entry_a->type == TYPE_DIRECTORY && entry_b->type != TYPE_DIRECTORY)
+        return -1;
+    if (entry_a->type != TYPE_DIRECTORY && entry_b->type == TYPE_DIRECTORY)
+        return 1;
+
+    if (entry_a->size < entry_b->size)
+        return -1;
+    if (entry_a->size > entry_b->size)
+        return 1;
+    return 0;
+}
+
+static int compare_by_date(const void *a, const void *b) {
+    FileEntry *entry_a = *(FileEntry **)a;
+    FileEntry *entry_b = *(FileEntry **)b;
+
+    if (entry_a->modified_time < entry_b->modified_time)
+        return -1;
+    if (entry_a->modified_time > entry_b->modified_time)
+        return 1;
+    return 0;
+}
+
+static void sort_entries(FileManager *fm) {
+    if (!fm || !fm->current_dir || !fm->current_dir->children)
+        return;
+
+    int (*compare_func)(const void *, const void *);
+
+    switch (fm->sort_mode) {
+    case SortByDate:
+        compare_func = compare_by_date;
+        break;
+    case SortBySize:
+        compare_func = compare_by_size;
+        break;
+    case SortByName:
+    default:
+        compare_func = compare_by_name;
+        break;
+    }
+
+    // Sort entries
+    qsort(fm->current_dir->children, fm->current_dir->child_count, sizeof(FileEntry *), compare_func);
+
+    // Reverse if needed
+    if (fm->reverse_sort && fm->current_dir->child_count > 1) {
+        for (size_t i = 0; i < fm->current_dir->child_count / 2; i++) {
+            FileEntry *temp = fm->current_dir->children[i];
+            fm->current_dir->children[i] = fm->current_dir->children[fm->current_dir->child_count - 1 - i];
+            fm->current_dir->children[fm->current_dir->child_count - 1 - i] = temp;
+        }
+    }
+}
+
+static FileEntry *create_file_entry(const char *path) {
     FileEntry *entry = (FileEntry *)malloc(sizeof(FileEntry));
     if (!entry)
         return NULL;
@@ -29,11 +111,9 @@ FileEntry *create_file_entry(const char *path) {
     struct stat st;
     if (stat(path, &st) == 0) {
         entry->size = st.st_size;
-        entry->modified_time = st.st_mtime;
-        entry->access_time = st.st_atime;
         entry->permissions = st.st_mode;
-        entry->owner = st.st_uid;
-        entry->group = st.st_gid;
+        entry->access_time = st.st_atime;
+        entry->modified_time = st.st_mtime;
 
         if (S_ISDIR(st.st_mode))
             entry->type = TYPE_DIRECTORY;
@@ -50,76 +130,16 @@ FileEntry *create_file_entry(const char *path) {
     return entry;
 }
 
-void free_file_entry(FileEntry *entry, bool recursive) {
-    if (!entry)
-        return;
-
-    if (recursive && entry->children) {
-        for (size_t i = 0; i < entry->child_count; i++) {
-            free_file_entry(entry->children[i], true);
-        }
-        free(entry->children);
-    }
-
-    free(entry);
-}
-
-// Compare function for sorting by name
-static int compare_by_name(const void *a, const void *b) {
-    FileEntry *entry_a = *(FileEntry **)a;
-    FileEntry *entry_b = *(FileEntry **)b;
-
-    // Directories first, then files
-    if (entry_a->type == 1 && entry_b->type != 1)
-        return -1;
-    if (entry_a->type != 1 && entry_b->type == 1)
-        return 1;
-
-    return strcasecmp(entry_a->name, entry_b->name);
-}
-
-static int compare_by_size(const void *a, const void *b) {
-    FileEntry *entry_a = *(FileEntry **)a;
-    FileEntry *entry_b = *(FileEntry **)b;
-
-    // Directories first, then files
-    if (entry_a->type == 1 && entry_b->type != 1)
-        return -1;
-    if (entry_a->type != 1 && entry_b->type == 1)
-        return 1;
-
-    if (entry_a->size < entry_b->size)
-        return -1;
-    if (entry_a->size > entry_b->size)
-        return 1;
-    return 0;
-}
-
-// Compare function for sorting by date
-static int compare_by_date(const void *a, const void *b) {
-    FileEntry *entry_a = *(FileEntry **)a;
-    FileEntry *entry_b = *(FileEntry **)b;
-
-    if (entry_a->modified_time < entry_b->modified_time)
-        return -1;
-    if (entry_a->modified_time > entry_b->modified_time)
-        return 1;
-    return 0;
-}
-
-// Read directory contents
-int read_directory(FileEntry *dir) {
+static int read_directory(FileEntry *dir) {
     if (!dir)
         return -1;
 
-    // Free existing children if any
     if (dir->children) {
-        for (size_t i = 0; i < dir->child_count; i++) {
-            free_file_entry(dir->children[i], true);
+        for (size_t i = 0; i < dir->child_count; ++i) {
+            free(dir->children[i]);
         }
+
         free(dir->children);
-        dir->children = NULL;
-        dir->child_count = 0;
     }
 
     DIR *d = opendir(dir->path);
@@ -133,9 +153,7 @@ int read_directory(FileEntry *dir) {
 
     while ((entry = readdir(d)) != NULL) {
         // Skip . and ..
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-            continue;
-        if (entry->d_name[0] == '.')
+        if (!show_file(entry))
             continue;
 
         count++;
@@ -152,9 +170,7 @@ int read_directory(FileEntry *dir) {
     size_t index = 0;
 
     while ((entry = readdir(d)) != NULL && index < count) {
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-            continue;
-        if (entry->d_name[0] == '.')
+        if (!show_file(entry))
             continue;
 
         char full_path[1024];
@@ -177,294 +193,7 @@ int read_directory(FileEntry *dir) {
     return 0;
 }
 
-int copy_entry(FileEntry *source, const char *dest_path) {
-    if (!source || !dest_path)
-        return -1;
-
-    char target[1024];
-    snprintf(target, sizeof(target), "%s/%s", dest_path, source->name);
-
-    if (source->type == TYPE_FILE) { // Regular file
-        FILE *src = fopen(source->path, "rb");
-        if (!src)
-            return -1;
-
-        FILE *dst = fopen(target, "wb");
-        if (!dst) {
-            fclose(src);
-            return -1;
-        }
-
-        char buffer[8192];
-        size_t bytes;
-
-        while ((bytes = fread(buffer, 1, sizeof(buffer), src)) > 0) {
-            fwrite(buffer, 1, bytes, dst);
-        }
-
-        fclose(src);
-        fclose(dst);
-
-        // Copy permissions
-        chmod(target, source->permissions);
-        chown(target, source->owner, source->group);
-
-        return 0;
-    } else if (source->type == TYPE_DIRECTORY) { // Directory
-        // Create target directory
-        mkdir(target, source->permissions);
-        chown(target, source->owner, source->group);
-
-        // Make sure children are loaded
-        if (!source->children) {
-            read_directory(source);
-        }
-
-        // Recursively copy children
-        for (size_t i = 0; i < source->child_count; i++) {
-            copy_entry(source->children[i], target);
-        }
-
-        return 0;
-    }
-
-    return -1; // Unsupported file type
-}
-
-int move_entry(FileEntry *source, const char *dest_path) {
-    if (!source || !dest_path)
-        return -1;
-
-    char target[1024];
-    snprintf(target, sizeof(target), "%s/%s", dest_path, source->name);
-
-    // Try simple rename first
-    if (rename(source->path, target) == 0) {
-        return 0;
-    }
-
-    // If rename fails, copy and delete
-    if (copy_entry(source, dest_path) == 0) {
-        return delete_entry(source);
-    }
-
-    return -1;
-}
-
-// Delete a file or directory
-int delete_entry(FileEntry *entry) {
-    if (!entry)
-        return -1;
-
-    if (entry->type == TYPE_FILE) {
-        if (unlink(entry->path) != 0) {
-            return -1;
-        }
-    } else if (entry->type == TYPE_DIRECTORY) {
-        // Make sure children are loaded
-        if (!entry->children) {
-            read_directory(entry);
-        }
-
-        // Recursively delete children
-        for (size_t i = 0; i < entry->child_count; i++) {
-            delete_entry(entry->children[i]);
-        }
-
-        // Delete empty directory
-        if (rmdir(entry->path) != 0) {
-            return -1;
-        }
-    }
-
-    return 0;
-}
-
-int create_directory(const char *path) {
-    if (!path)
-        return -1;
-
-    // Create with standard permissions (755)
-    if (mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0) {
-        return -1;
-    }
-
-    return 0;
-}
-
-FileManager *create_file_manager(const char *start_path) {
-    FileManager *fm = (FileManager *)malloc(sizeof(FileManager));
-    if (!fm)
-        return NULL;
-
-    memset(fm, 0, sizeof(FileManager));
-
-    // Set default sorting
-    fm->sort_mode = 0; // Sort by name
-    fm->show_hidden = false;
-    fm->reverse_sort = false;
-
-    // Initialize history
-    fm->history_size = 32;
-    fm->history = (FileEntry **)malloc(fm->history_size * sizeof(FileEntry *));
-    fm->history_pos = 0;
-
-    if (!fm->history) {
-        free(fm);
-        return NULL;
-    }
-
-    // Start at given path or current directory
-    const char *path = start_path ? start_path : ".";
-    fm->current_dir = create_file_entry(path);
-
-    if (!fm->current_dir) {
-        free(fm->history);
-        free(fm);
-        return NULL;
-    }
-
-    // Load directory contents
-    read_directory(fm->current_dir);
-    fm->history[0] = fm->current_dir;
-
-    // sort_entries(fm);
-
-    return fm;
-}
-
-void free_file_manager(FileManager *fm) {
-    if (!fm)
-        return;
-
-    if (fm->history) {
-        for (size_t i = 0; i < fm->history_pos; i++) {
-            if (fm->history[i] && fm->history[i] != fm->current_dir) {
-                free_file_entry(fm->history[i], true);
-            }
-        }
-        free(fm->history);
-    }
-
-    if (fm->current_dir) {
-        free_file_entry(fm->current_dir, true);
-    }
-
-    free(fm);
-}
-
-// Change current directory
-void change_directory(FileManager *fm, const char *path) {
-    if (!fm || !path)
-        return;
-
-    FileEntry *new_dir = create_file_entry(path);
-    if (!new_dir || new_dir->type != 1) {
-        free_file_entry(new_dir, false);
-        return;
-    }
-
-    if (read_directory(new_dir) != 0) {
-        free_file_entry(new_dir, true);
-        return;
-    }
-
-    // Add to history
-    if (fm->history_pos < fm->history_size - 1) {
-        fm->history_pos++;
-        fm->history[fm->history_pos] = new_dir;
-    } else {
-        // History full, shift and add
-        free_file_entry(fm->history[0], true);
-        for (size_t i = 0; i < fm->history_size - 1; i++) {
-            fm->history[i] = fm->history[i + 1];
-        }
-        fm->history[fm->history_size - 1] = new_dir;
-    }
-
-    fm->current_dir = new_dir;
-    fm->selected_entry = NULL;
-
-    sort_entries(fm);
-}
-
-void refresh_current_dir(FileManager *fm) {
-    if (!fm || !fm->current_dir)
-        return;
-
-    // Remember selected entry name to restore selection after refresh
-    char selected_name[256] = {0};
-    if (fm->selected_entry) {
-        strncpy(selected_name, fm->selected_entry->name, sizeof(selected_name) - 1);
-    }
-
-    read_directory(fm->current_dir);
-    sort_entries(fm);
-}
-
-void sort_entries(FileManager *fm) {
-    if (!fm || !fm->current_dir || !fm->current_dir->children)
-        return;
-
-    int (*compare_func)(const void *, const void *);
-
-    switch (fm->sort_mode) {
-    case 1: // By date
-        compare_func = compare_by_date;
-        break;
-    case 2: // By size
-        compare_func = compare_by_size;
-        break;
-    case 0: // By name (default)
-    default:
-        compare_func = compare_by_name;
-        break;
-    }
-
-    // Sort entries
-    qsort(fm->current_dir->children, fm->current_dir->child_count, sizeof(FileEntry *), compare_func);
-
-    // Reverse if needed
-    if (fm->reverse_sort && fm->current_dir->child_count > 1) {
-        for (size_t i = 0; i < fm->current_dir->child_count / 2; i++) {
-            FileEntry *temp = fm->current_dir->children[i];
-            fm->current_dir->children[i] = fm->current_dir->children[fm->current_dir->child_count - 1 - i];
-            fm->current_dir->children[fm->current_dir->child_count - 1 - i] = temp;
-        }
-    }
-}
-
-void toggle_hidden_files(FileManager *fm) {
-    if (!fm)
-        return;
-
-    fm->show_hidden = !fm->show_hidden;
-    refresh_current_dir(fm);
-}
-
-void go_back(FileManager *fm) {
-    if (!fm || fm->history_pos <= 0)
-        return;
-
-    fm->history_pos--;
-    fm->current_dir = fm->history[fm->history_pos];
-    fm->selected_entry = NULL;
-
-    refresh_current_dir(fm);
-}
-
-void go_forward(FileManager *fm) {
-    if (!fm || fm->history_pos >= fm->history_size - 1 || !fm->history[fm->history_pos + 1])
-        return;
-
-    fm->history_pos++;
-    fm->current_dir = fm->history[fm->history_pos];
-    fm->selected_entry = NULL;
-
-    refresh_current_dir(fm);
-}
-
-int find_index_of(FileManager *fm, const char *path, int default_index) {
+static int find_index_of(FileManager *fm, const char *path, int default_index) {
     for (size_t i = 0; i < fm->current_dir->child_count; ++i) {
         if (strcmp(fm->current_dir->children[i]->path, path) == 0) {
             return i;
@@ -474,31 +203,123 @@ int find_index_of(FileManager *fm, const char *path, int default_index) {
     return default_index;
 }
 
-bool is_text_file(const char *filename, char *buffer, int len) {
-    FILE *file = fopen(filename, "rb");
-    if (!file)
-        return false;
-
-    size_t bytesRead = fread(buffer, 1, len - 1, file);
-    buffer[bytesRead] = '\0';
-    fclose(file);
-
-    if (bytesRead == 0)
-        return false;
-
-    for (size_t i = 0; i < bytesRead; i++) {
-        if (buffer[i] == '\0')
-            return false;
+static void free_file_entry(FileEntry *entry) {
+    for (size_t i = 0; i < entry->child_count; ++i) {
+        free(entry->children[i]);
     }
 
-    // Check the ratio of printable to non-printable characters
-    int printable = 0;
+    free(entry->children);
+    free(entry);
+}
 
-    for (size_t i = 0; i < bytesRead; i++) {
-        unsigned char c = (unsigned char)buffer[i];
-        if (c == '\n' || c == '\r' || c == '\t' || (c >= 32 && c <= 126))
-            printable++;
+static void free_history(FileManager *fm) {
+    FileEntry *entry = fm->current_dir;
+    while (entry) {
+        FileEntry *parent = entry->parent;
+        free_file_entry(entry);
+        entry = parent;
+    }
+}
+
+FileManager *create_file_manager(const char *path) {
+    FileManager *fm = (FileManager *)malloc(sizeof(FileManager));
+    if (!fm)
+        return NULL;
+
+    memset(fm, 0, sizeof(FileManager));
+
+    fm->sort_mode = SortByName;
+    fm->show_hidden = false; // unimplemented
+    fm->reverse_sort = false;
+
+    fm->current_dir = create_file_entry(path);
+    fm->current_dir->parent = NULL;
+    read_directory(fm->current_dir);
+    sort_entries(fm);
+
+    return fm;
+}
+
+void change_directory(FileManager *fm, const char *path) {
+    FileEntry *parent = fm->current_dir;
+
+    fm->current_dir = create_file_entry(path);
+    fm->current_dir->parent = parent;
+    read_directory(fm->current_dir);
+    sort_entries(fm);
+}
+
+void switch_directory(FileManager *fm, const char *path) {
+    free_history(fm);
+
+    fm->current_dir = create_file_entry(path);
+    fm->current_dir->parent = NULL;
+    read_directory(fm->current_dir);
+    sort_entries(fm);
+}
+
+int navigate_back(FileManager *fm) {
+    if (fm->current_dir->parent == NULL)
+        return -1;
+
+    FileEntry *old = fm->current_dir;
+
+    fm->current_dir = fm->current_dir->parent;
+    read_directory(fm->current_dir);
+    sort_entries(fm);
+
+    int index = find_index_of(fm, old->path, 0);
+
+    free_file_entry(old);
+    return index;
+}
+
+void free_file_manager(FileManager *fm) {
+    free_history(fm);
+    free(fm);
+}
+
+bool get_mime_type(const char *path, const char *test) {
+    bool ret = false;
+    const char *mimetype;
+    magic_t magic;
+
+    if ((magic = magic_open(MAGIC_MIME_TYPE)) == NULL) {
+        fprintf(stderr, "Error opening libmagic.\n");
+        return ret;
+    }
+    if (magic_load(magic, NULL) == -1) {
+        fprintf(stderr, "Error magic_load.\n");
+        magic_close(magic);
+        return ret;
+    }
+    if ((mimetype = magic_file(magic, path)) == NULL) {
+        fprintf(stderr, "Error getting mimetype.\n");
+        magic_close(magic);
+        return ret;
     }
 
-    return (printable >= bytesRead * 0.7);
+    ret = strstr(mimetype, test) != NULL;
+
+    magic_close(magic);
+    return ret;
+}
+
+static void xdg_open(const char *str) {
+    if (fork() == 0) {
+        // redirect stdout and stderr to null
+        int fd = open("/dev/null", O_WRONLY);
+        dup2(fd, 1);
+        dup2(fd, 2);
+        close(fd);
+        execl("/usr/bin/xdg-open", "/usr/bin/xdg-open", str, (char *)0);
+    }
+}
+
+void open_file(const char *path) {
+    if (!access("/usr/bin/xdg-open", X_OK)) {
+        xdg_open(path);
+    } else {
+        fprintf(stderr, "no xdg-open.\n");
+    }
 }

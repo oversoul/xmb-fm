@@ -1,6 +1,6 @@
-CFLAGS=-Wall -std=c23 -pedantic -g -fcolor-diagnostics
-LDFLAGS = -lm -lGL -lglfw `pkg-config --libs freetype2 glew`
-INCS=-I include/ `pkg-config --cflags freetype2 glew`
+CFLAGS=-Wall -std=c23 -pedantic -g -fcolor-diagnostics #-fsanitize=address
+LDFLAGS = -lm -lGL -lglfw `pkg-config --libs freetype2 glew libmagic`
+INCS=-I include/ `pkg-config --cflags freetype2 glew libmagic`
 
 COMPILER = clang
 
