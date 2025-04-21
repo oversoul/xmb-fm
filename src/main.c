@@ -333,13 +333,11 @@ int main() {
         return -1;
     }
 
-    // Initialize menu data
     srand(time(NULL));
     initialize_menu_data();
 
     vr_list_update();
 
-    // Main loop
     while (!glfwWindowShouldClose(window)) {
         float current_time = glfwGetTime();
 

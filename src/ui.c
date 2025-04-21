@@ -457,80 +457,57 @@ void draw_wrapped_text(float size, float x, float y, const char *text, Color col
     get_string_glyphs(atlas, font_id, size, text, &glyphs, &glyph_count);
 
     // Line tracking variables
-    int line_start = 0;
-    int last_space = -1;
-    float cursor_x = 0;
     float line_y = y;
     float line_height = size * 1.5f; // Adjust line spacing as needed
 
-    for (int i = 0; i <= glyph_count; i++) {
-        // Check if we're at the end or have a space
-        bool is_space = false;
-        bool is_linebreak = false;
-        bool is_end = (i == glyph_count);
+    int start = 0;
+    while (start < glyph_count) {
+        int end = start;
+        float width = 0;
+        int last_break = -1;
 
-        if (!is_end) {
-            GlyphInfo *glyph = &glyphs[i];
-            is_space = (glyph->codepoint == ' ' || glyph->codepoint == '\t');
-            is_linebreak = (glyph->codepoint == '\n');
+        // Find where this line should end
+        while (end < glyph_count) {
+            GlyphInfo *glyph = &glyphs[end];
 
-            // Update the cursor position
-            if (!is_linebreak) {
-                cursor_x += glyph->xadvance;
-            }
-
-            if (is_space) {
-                last_space = i;
-            }
-        }
-
-        // Check if we need to wrap (exceeded width or reached end)
-        if (is_end || is_linebreak || cursor_x > max_width) {
-            int line_end;
-
-            if (is_linebreak) {
-                line_end = i + 1;
-            } else if (cursor_x > max_width && last_space > line_start) {
-                line_end = last_space;
-            } else if (is_end) {
-                line_end = glyph_count;
-            } else {
-                line_end = i;
-            }
-
-            // Draw this line
-            float line_x = x;
-            for (int j = line_start; j < line_end; j++) {
-                GlyphInfo *glyph = &glyphs[j];
-
-                // Draw this glyph
-                draw_glyph(line_x, line_y, color, glyph, atlas->width, atlas->height);
-
-                // Advance cursor for this line
-                line_x += glyph->xadvance;
-            }
-
-            // Start new line after the break
-            if (cursor_x > max_width && last_space > line_start) {
-                // Skip the space that caused the break
-                line_start = last_space + 1;
-            } else {
-                line_start = line_end;
-            }
-
-            // Reset tracking variables
-            cursor_x = 0;
-            last_space = -1;
-            line_y += line_height;
-
-            // Recompute cursor position for the new line
-            for (int j = line_start; j < i; j++) {
-                cursor_x += glyphs[j].xadvance;
-            }
-
-            if (is_end)
+            if (glyph->codepoint == '\n') {
+                end++; // Include the newline position
                 break;
+            }
+
+            if (glyph->codepoint == ' ' || glyph->codepoint == '\t') {
+                last_break = end;
+            }
+
+            // Check if adding this character exceeds width
+            if (width + glyph->xadvance > max_width) {
+                if (last_break > start) {
+                    end = last_break;
+                }
+                break;
+            }
+
+            width += glyph->xadvance;
+            end++;
         }
+
+        // if we didn't find a breaking point and hit max width
+        if (end == start && width > max_width) {
+            end = start + 1; // least one character
+        }
+
+        // Draw the line
+        float line_x = x;
+        for (int i = start; i < end; i++) {
+            if (glyphs[i].codepoint == '\n')
+                continue;
+
+            draw_glyph(line_x, line_y, color, &glyphs[i], atlas->width, atlas->height);
+            line_x += glyphs[i].xadvance;
+        }
+
+        line_y += line_height;
+        start = end;
     }
 
     free(glyphs);
