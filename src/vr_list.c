@@ -16,94 +16,93 @@ static float item_y(const VerticalList *list, int i, size_t current) {
     return icon_spacing_vertical * (i - (int)current + list->under_item_offset);
 }
 
-static void calculate_visible_range(const VerticalList *list, unsigned height, size_t list_size, unsigned current,
-                                    unsigned *first, unsigned *last) {
-    unsigned j;
-    float base_y = list->margins_screen_top;
+static void find_visible_items(const VerticalList *list, uint32_t screen_height, uint32_t total_items,
+                               uint32_t selected_index, uint32_t *start_index, uint32_t *end_index) {
+    float y_offset = list->margins_screen_top;
 
-    *first = 0;
-    *last = (unsigned)(list_size ? list_size - 1 : 0);
+    *start_index = 0;
+    *end_index = total_items > 0 ? (total_items - 1) : 0;
 
-    if (current) {
-        for (j = current; j-- > 0;) {
-            float bottom = item_y(list, j, current) + base_y + list->icon_size;
-
-            if (bottom < 0)
-                break;
-
-            *first = j;
-        }
+    unsigned i;
+    // Look upward from the current index
+    for (i = selected_index; i-- > 0;) {
+        float item_bottom = item_y(list, i, selected_index) + y_offset + list->icon_size;
+        if (item_bottom < 0)
+            break;
+        *start_index = i;
     }
 
-    for (j = current + 1; j < list_size; j++) {
-        float top = item_y(list, j, current) + base_y;
-
-        if (top > height)
+    // Look downward from the current index
+    for (i = selected_index + 1; i < total_items; ++i) {
+        float item_top = item_y(list, i, selected_index) + y_offset;
+        if (item_top > screen_height)
             break;
-
-        *last = j;
+        *end_index = i;
     }
 }
 
 void update_vertical_list(VerticalList *list, float current_time) {
-    unsigned i, end, height, entry_start, entry_end;
     int threshold = 0;
     size_t selection = list->selected;
 
     if (list->items_count == 0)
         return;
 
-    end = (unsigned)list->items_count;
+    uint32_t end = (uint32_t)list->items_count;
     threshold = list->icon_size * 10;
 
+    uint32_t height, entry_start, entry_end;
     list->get_screen_size(NULL, &height);
-    calculate_visible_range(list, height, end, (unsigned)selection, &entry_start, &entry_end);
+    find_visible_items(list, height, end, selection, &entry_start, &entry_end);
 
     list->entry_start = entry_start;
     list->entry_end = entry_end + 1;
 
-    for (i = 0; i < end; i++) {
-        float iy, real_iy;
-        float ia = 0.5; // items_passive_alpha;
-        float iz = 0.5; // items_passive_zoom;
+    float default_zoom = 0.6;
+    float default_alpha = 0.6;
+
+    for (size_t i = 0; i < end; i++) {
+        float y_pos, real_y_pos;
+        float zoom = default_zoom;
+        float label_alpha = default_alpha;
         struct file_entry *node = list->items[i];
 
-        iy = item_y(list, i, selection);
-        real_iy = iy + list->margins_screen_top;
+        y_pos = item_y(list, i, selection);
+        real_y_pos = y_pos + list->margins_screen_top;
 
         if (i == selection) {
-            ia = 1.0; // items_active_alpha;
-            iz = 1.0; // items_active_zoom;
+            label_alpha = 1.0;
+            zoom = 1.0;
         }
 
-        if (real_iy < -threshold || real_iy > height + threshold) {
-            node->y = iy;
-            node->zoom = iz;
-            node->alpha = node->label_alpha = ia;
+        if (real_y_pos < -threshold || real_y_pos > height + threshold) {
+            node->y = y_pos;
+            node->zoom = zoom;
+            node->alpha = node->label_alpha = label_alpha;
         } else {
             /* Move up/down animation */
             AnimatedProperty anim_entry;
 
             anim_entry.duration = .2;
 
-            anim_entry.target = ia;
+            anim_entry.target = label_alpha;
             anim_entry.subject = &node->alpha;
             anim_entry.start_time = current_time;
             gfx_animation_push(&anim_entry, VerticalListTag);
 
-            anim_entry.target = ia;
+            anim_entry.target = label_alpha;
             anim_entry.subject = &node->label_alpha;
             anim_entry.start_time = current_time;
             gfx_animation_push(&anim_entry, VerticalListTag);
 
-            anim_entry.target = iz;
+            anim_entry.target = zoom;
             anim_entry.duration = 0.05;
             anim_entry.subject = &node->zoom;
             anim_entry.start_time = current_time;
 
             gfx_animation_push(&anim_entry, VerticalListTag);
 
-            anim_entry.target = iy;
+            anim_entry.target = y_pos;
             anim_entry.duration = .2;
             anim_entry.subject = &node->y;
             anim_entry.start_time = current_time;

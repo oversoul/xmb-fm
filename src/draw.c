@@ -220,7 +220,7 @@ void draw_horizontal_menu(const HorizontalList *hr_list, int x, int y) {
         // icon
         use_font("icon");
         float fsize = 20 * scale_factor;
-        Color icon_color = {0, 0, 0, 1.0};
+        Color icon_color = {0, 0, 0, 1};
 
         float w, h, by, sx;
         get_text_bounds(fsize, hr_list->items[hr_list->selected].icon, &w, &h, &sx, &by);
@@ -286,7 +286,7 @@ void draw_vertical_list(const VerticalList *list, float start_x) {
         float x = start_x + node->x;
         float y = list->margins_screen_top + node->y;
 
-        Color icon_color = {0.8, 0.8, 1, node->alpha};
+        Color icon_color = {1, 1, 1, node->alpha};
 
         float size = list->icon_size + (node->zoom == 1 ? 10 : 0);
 
@@ -362,55 +362,57 @@ char *readable_fs(double bytes, char *buf) {
     return buf;
 }
 
+static float draw_section(float x, float y, const char *key, const char *value, Color color, float max_width) {
+    draw_text(14, x, y, key, color);
+    y += 30;
+    float size = draw_wrapped_text(16, x, y, value, color, max_width);
+    return size + 30;
+}
+
 void draw_info(const VerticalList *vr_list, float width, float height) {
     struct file_entry *current = vr_list->items[vr_list->selected];
     if (current == NULL)
         return;
 
-    float rect_w = 500;
+    float rect_w = 400;
     float x = width - rect_w;
-    float y = height - 200;
+    float y = 200;
 
-    begin_rect(x, y);
-    rect_size(rect_w - 20, 180);
-    rect_radius(10, 10, 10, 10);
+    begin_rect(x, 0);
+    rect_size(rect_w, height);
     rect_color(0, 0, 0, .6);
     end_rect();
 
-    float gap = 30;
-
-    y += gap;
+    float gap = 20;
+    float padding = 20;
+    x += padding;
+    float wrap_width = rect_w - padding * 2;
 
     use_font("sans");
-    draw_text(16, x + 20, y, "Name:", (Color){1, 1, 1, 1});
-    draw_text(16, x + 180, y, current->name, (Color){1, 1, 1, 1});
 
-    y += gap;
+    float s = 0;
+    s = draw_section(x, y, "Name:", current->name, (Color){1, 1, 1, 1}, wrap_width);
+    y += s + gap;
 
-    draw_text(16, x + 20, y, "Path:", (Color){1, 1, 1, 1});
-    draw_text(16, x + 180, y, current->path, (Color){1, 1, 1, 1});
-
-    y += gap;
+    s = draw_section(x, y, "Path:", current->path, (Color){1, 1, 1, 1}, wrap_width);
+    y += s + gap;
 
     struct tm access_lt;
     localtime_r(&current->access_time, &access_lt);
     char access_timbuf[80];
     strftime(access_timbuf, sizeof(access_timbuf), "%c", &access_lt);
-    draw_text(16, x + 20, y, "Access Time:", (Color){1, 1, 1, 1});
-    draw_text(16, x + 180, y, access_timbuf, (Color){1, 1, 1, 1});
 
-    y += gap;
+    s = draw_section(x, y, "Access Time:", access_timbuf, (Color){1, 1, 1, 1}, wrap_width);
+    y += s + gap;
 
     struct tm modified_lt;
     localtime_r(&current->modified_time, &modified_lt);
     char modified_timbuf[80];
     strftime(modified_timbuf, sizeof(access_timbuf), "%c", &access_lt);
-    draw_text(16, x + 20, y, "Modified Time:", (Color){1, 1, 1, 1});
-    draw_text(16, x + 180, y, modified_timbuf, (Color){1, 1, 1, 1});
 
-    y += gap;
+    s = draw_section(x, y, "Modified Time:", modified_timbuf, (Color){1, 1, 1, 1}, wrap_width);
+    y += s + gap;
 
     char buf[20];
-    draw_text(16, x + 20, y, "Size:", (Color){1, 1, 1, 1});
-    draw_text(16, x + 180, y, readable_fs(current->size, buf), (Color){1, 1, 1, 1});
+    draw_section(x, y, "Size:", readable_fs(current->size, buf), (Color){1, 1, 1, 1}, wrap_width);
 }

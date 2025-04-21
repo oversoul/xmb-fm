@@ -442,14 +442,14 @@ void get_text_bounds(float size, const char *text, float *width, float *height, 
     free(glyphs);
 }
 
-void draw_wrapped_text(float size, float x, float y, const char *text, Color color, float max_width) {
+float draw_wrapped_text(float size, float x, float y, const char *text, Color color, float max_width) {
     GlyphInfo *glyphs;
     int glyph_count;
 
     FontAtlas *atlas = renderState.font_atlas;
     if (!atlas) {
         fprintf(stderr, "Font atlas not created.\n");
-        return;
+        return 0;
     }
 
     int font_id = renderState.current_font;
@@ -511,6 +511,8 @@ void draw_wrapped_text(float size, float x, float y, const char *text, Color col
     }
 
     free(glyphs);
+
+    return line_y - y;
 }
 
 void draw_text(float size, float x, float y, const char *text, Color color) {

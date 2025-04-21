@@ -55,26 +55,26 @@ typedef struct {
 } GlyphInfo;
 
 typedef struct {
-    FT_Face face;                // FreeType font face
-    char name[64];               // Font name
-    float sizes[MAX_FONT_SIZES]; // Tracked font sizes
-    int size_count;              // Number of active sizes
+    FT_Face face;
+    char name[64];
+    float sizes[MAX_FONT_SIZES];
+    int size_count;
 } FontInfo;
 
 typedef struct {
-    unsigned char *pixels;          // Atlas pixel data (single channel)
-    int width, height;              // Atlas dimensions
-    FT_Library ft_library;          // FreeType library instance
-    FontInfo fonts[MAX_FONTS];      // Registered fonts
-    char font_names[MAX_FONTS][60]; // Registered fonts names
-    int font_count;                 // Number of registered fonts
-    GlyphInfo *glyphs;              // Array of glyph data
-    int glyph_capacity;             // Capacity of glyph array
-    int glyph_count;                // Number of glyphs in atlas
-    int current_x, current_y;       // Current position for adding glyphs
-    int current_line_height;        // Height of current line
-    GLuint texture_id;              // OpenGL texture ID
-    bool dirty;                     // Whether atlas needs updating
+    unsigned char *pixels;
+    int width, height;
+    FT_Library ft_library;
+    FontInfo fonts[MAX_FONTS];
+    char font_names[MAX_FONTS][60];
+    int font_count;
+    GlyphInfo *glyphs;
+    int glyph_capacity;
+    int glyph_count;
+    int current_x, current_y;
+    int current_line_height;
+    GLuint texture_id;
+    bool dirty;
 } FontAtlas;
 
 typedef struct {
@@ -96,10 +96,6 @@ typedef struct {
 //     2, 3, 0, // tri 2
 // };
 
-// Font load_font(const char *path, int pixel_height) ;
-// void font_cleanup(Font* font) ;
-// void add_text(const char *text, float x, float y, Color color) ;
-// float get_text_width(const char *text, float scale) ;
 void begin_rect(float x, float y);
 void rect_size(float w, float h);
 void rect_color(float r, float g, float b, float a);
@@ -118,8 +114,8 @@ void add_rect(float x, float y, float w, float h, Color color[4]);
 
 void create_font_atlas();
 void use_font(const char *name);
-void draw_wrapped_text(float size, float x, float y, const char *text, Color color, float max_width);
 int register_font(const char *name, const char *filename);
 void get_text_bounds(float size, const char *text, float *width, float *height, float *start_x, float *bearing_y);
 void draw_text(float size, float x, float y, const char *text, Color color);
+float draw_wrapped_text(float size, float x, float y, const char *text, Color color, float max_width);
 void destroy_font_atlas();
