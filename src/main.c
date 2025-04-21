@@ -19,6 +19,7 @@
 
 // Global state
 typedef struct {
+    int theme;
     int width;
     int height;
     int depth;
@@ -27,7 +28,6 @@ typedef struct {
     char buffer[512];
 } State;
 
-int theme = 0;
 State state = {0};
 HrItem horizontalItems[10];
 
@@ -94,12 +94,12 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         glfwSetWindowShouldClose(window, GL_TRUE);
     } break;
     case GLFW_KEY_EQUAL: {
-        if (theme < 20)
-            theme++;
+        if (state.theme < 20)
+            state.theme++;
     } break;
     case GLFW_KEY_MINUS: {
-        if (theme > 0)
-            theme--;
+        if (state.theme > 0)
+            state.theme--;
     } break;
     case GLFW_KEY_LEFT: {
         if (state.depth > 0)
@@ -352,7 +352,7 @@ int main() {
         glfwGetWindowSize(window, &winWidth, &winHeight);
 
         start_frame(width, height);
-        draw_background(state.width, state.height, theme);
+        draw_background(state.width, state.height, state.theme);
 
         draw_folder_path(&hr_list, fm->current_dir->path, 200, 160);
         draw_vertical_list(&vr_list, 190);
