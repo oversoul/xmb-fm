@@ -8,10 +8,11 @@ void update_horizontal_list(HorizontalList *hr_list, float current_time) {
     anim.duration = 0.04;
     anim.start_time = current_time;
     anim.target = hr_list->selected * offset;
+
     if (hr_list->depth > 0) {
         anim.target += 50;
     }
 
     anim.subject = &hr_list->scroll;
-    gfx_animation_push(&anim);
+    gfx_animation_push(&anim, HorizontalListTag);
 }

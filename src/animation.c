@@ -1,12 +1,14 @@
 #include "animation.h"
 #include <math.h>
+#include <stdio.h>
 
 animation_t anim_st = {0};
 
-void gfx_animation_push(AnimatedProperty *entry) {
+void gfx_animation_push(AnimatedProperty *entry, AnimationTag tag) {
     animation_t *p_anim = &anim_st;
 
     tween_t t = {
+        .tag = tag,
         .subject = entry->subject,
         .duration = entry->duration,
         .target_value = entry->target,
@@ -56,6 +58,17 @@ float easeInOutExpo(float x) {
 
 float ease(float x) { return x * x * (3 - 2 * x); }
 
+void gfx_remove_animation(animation_t *p_anim, size_t i) {
+    if (i < 0 || i >= p_anim->size)
+        return;
+
+    for (int idx = i; idx < p_anim->size - 1; idx++) {
+        p_anim->list[idx] = p_anim->list[idx + 1]; // Shift elements left
+    }
+
+    (p_anim->size)--;
+}
+
 void gfx_animation_update(float current_time) {
     animation_t *p_anim = &anim_st;
 
@@ -69,23 +82,25 @@ void gfx_animation_update(float current_time) {
         float t = tween->running_since / tween->duration;
         if (t >= 1.0f) {
             *tween->subject = tween->target_value;
-
-            { // remove animation
-                if (i < 0 || i >= p_anim->size)
-                    continue;
-
-                for (int idx = i; idx < p_anim->size - 1; idx++) {
-                    p_anim->list[idx] = p_anim->list[idx + 1]; // Shift elements left
-                }
-
-                (p_anim->size)--;
-            }
-
+            gfx_remove_animation(p_anim, i);
             i--;
         } else {
             float eased = ease(t);
             // float eased = easeInOutExpo(t);
             *tween->subject = tween->initial_value + (tween->target_value - tween->initial_value) * eased;
+        }
+    }
+}
+
+void gfx_animation_remove_by_tag(AnimationTag tag) {
+    animation_t *p_anim = &anim_st;
+
+    for (int i = 0; i < p_anim->size; ++i) {
+        tween_t *tween = &p_anim->list[i];
+
+        if (tween->tag == tag) {
+            gfx_remove_animation(p_anim, i);
+            i--;
         }
     }
 }

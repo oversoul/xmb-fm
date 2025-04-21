@@ -1,4 +1,5 @@
 #include "fm.h"
+#include "animation.h"
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>

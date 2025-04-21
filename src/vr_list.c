@@ -89,26 +89,26 @@ void update_vertical_list(VerticalList *list, float current_time) {
             anim_entry.target = ia;
             anim_entry.subject = &node->alpha;
             anim_entry.start_time = current_time;
-            gfx_animation_push(&anim_entry);
+            gfx_animation_push(&anim_entry, VerticalListTag);
 
             anim_entry.target = ia;
             anim_entry.subject = &node->label_alpha;
             anim_entry.start_time = current_time;
-            gfx_animation_push(&anim_entry);
+            gfx_animation_push(&anim_entry, VerticalListTag);
 
             anim_entry.target = iz;
             anim_entry.duration = 0.05;
             anim_entry.subject = &node->zoom;
             anim_entry.start_time = current_time;
 
-            gfx_animation_push(&anim_entry);
+            gfx_animation_push(&anim_entry, VerticalListTag);
 
             anim_entry.target = iy;
             anim_entry.duration = .2;
             anim_entry.subject = &node->y;
             anim_entry.start_time = current_time;
 
-            gfx_animation_push(&anim_entry);
+            gfx_animation_push(&anim_entry, VerticalListTag);
 
             // printf("IY: %f\n", iy);
             // node->y = iy;

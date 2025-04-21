@@ -228,6 +228,9 @@ int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint)
         return -1;
     }
 
+    if (font->face == NULL)
+        return -1;
+
     // Render glyph to bitmap
     error = FT_Render_Glyph(font->face->glyph, FT_RENDER_MODE_NORMAL);
     if (error) {

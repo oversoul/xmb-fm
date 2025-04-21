@@ -50,7 +50,15 @@ void get_window_size(unsigned *width, unsigned *height) {
     }
 }
 
+void hr_list_update() {
+    gfx_animation_remove_by_tag(HorizontalListTag);
+
+    update_horizontal_list(&hr_list, glfwGetTime());
+}
+
 void vr_list_update() {
+    gfx_animation_remove_by_tag(VerticalListTag);
+
     vr_list.items = fm->current_dir->children;
     vr_list.items_count = fm->current_dir->child_count;
     update_vertical_list(&vr_list, glfwGetTime());
@@ -86,9 +94,8 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
             return;
         if (hr_list.selected > 0) {
             hr_list.selected--;
-            update_horizontal_list(&hr_list, glfwGetTime());
-            while (fm->history_pos != 0)
-                go_back(fm);
+
+            hr_list_update();
             state.depth = 0;
 
             change_directory(fm, horizontalItems[hr_list.selected].path);
@@ -103,9 +110,9 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
 
         if (hr_list.selected < hr_list.items_count - 1) {
             hr_list.selected++;
-            update_horizontal_list(&hr_list, glfwGetTime());
-            while (fm->history_pos != 0)
-                go_back(fm);
+
+            hr_list_update();
+
             state.depth = 0;
 
             change_directory(fm, horizontalItems[hr_list.selected].path);
@@ -175,7 +182,8 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         vr_list.selected = find_index_of(fm, old, 0);
 
         vr_list_update();
-        update_horizontal_list(&hr_list, glfwGetTime());
+
+        hr_list_update();
     } break;
     case GLFW_KEY_ENTER: {
         struct file_entry *current = fm->current_dir->children[vr_list.selected];
@@ -187,7 +195,7 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
             change_directory(fm, current->path);
             vr_list.selected = 0;
             vr_list_update();
-            update_horizontal_list(&hr_list, glfwGetTime());
+            hr_list_update();
         } else if (current->type == TYPE_FILE) {
             char command[1060];
             sprintf(command, "xdg-open \"%s\" &", current->path);
