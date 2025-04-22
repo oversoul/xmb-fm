@@ -57,3 +57,4 @@ void switch_directory(FileManager *fm, const char *path);
 
 bool get_mime_type(const char *path, const char *test);
 void open_file(const char *path);
+void read_file_content(const char *filename, char *buffer, size_t len);

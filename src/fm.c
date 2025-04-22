@@ -323,3 +323,15 @@ void open_file(const char *path) {
         fprintf(stderr, "no xdg-open.\n");
     }
 }
+
+void read_file_content(const char *filename, char *buffer, size_t len) {
+    FILE *file = fopen(filename, "rb");
+    if (!file) {
+        fprintf(stderr, "File couldn't be opened.\n");
+        return;
+    }
+
+    size_t bytesRead = fread(buffer, 1, len - 1, file);
+    buffer[bytesRead] = '\0';
+    fclose(file);
+}

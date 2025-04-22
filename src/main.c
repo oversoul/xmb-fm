@@ -67,18 +67,6 @@ void vr_list_update() {
     update_vertical_list(&vr_list, glfwGetTime());
 }
 
-void read_file_preview(const char *filename, char *buffer, size_t len) {
-    FILE *file = fopen(filename, "rb");
-    if (!file) {
-        fprintf(stderr, "File couldn't be opened.\n");
-        return;
-    }
-
-    size_t bytesRead = fread(buffer, 1, len - 1, file);
-    buffer[bytesRead] = '\0';
-    fclose(file);
-}
-
 // Input handling
 void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action != GLFW_PRESS)
@@ -213,7 +201,7 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
     case GLFW_KEY_P: {
         struct file_entry *current = fm->current_dir->children[vr_list.selected];
         if (current->type == TYPE_FILE && get_mime_type(current->path, "text/")) {
-            read_file_preview(current->path, state.buffer, 512);
+            read_file_content(current->path, state.buffer, 512);
             state.show_preview = true;
         }
     } break;
