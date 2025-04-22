@@ -24,7 +24,6 @@ typedef struct {
     int theme;
     int width;
     int height;
-    int depth;
     bool show_info;
     bool show_preview;
     char buffer[512];
@@ -67,168 +66,146 @@ void vr_list_update() {
     update_vertical_list(&vr_list, glfwGetTime());
 }
 
-// Input handling
-void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    if (action != GLFW_PRESS)
-        return;
+bool handle_op_list_key(int key, float current_time) {
+    switch (key) {
+    case GLFW_KEY_I:
+    case GLFW_KEY_ESCAPE:
+        op_list.selected = 0;
+        op_list.is_open = false;
+        update_option_list(&op_list, current_time);
+        return true;
+    case GLFW_KEY_UP:
+        if (op_list.selected > 0)
+            op_list.selected--;
+        return true;
+    case GLFW_KEY_DOWN:
+        if (op_list.selected < op_list.items_count - 1)
+            op_list.selected++;
+        return true;
+    case GLFW_KEY_ENTER: {
+        const char *current = op_list.items[op_list.selected].title;
+        if (strcmp(current, "Information") == 0) {
 
-    if (state.show_info) {
-        if (key == GLFW_KEY_ESCAPE) {
-            state.show_info = false;
-        }
-        return;
-    }
+            state.show_info = true;
 
-    if (op_list.is_open) {
-        switch (key) {
-        case GLFW_KEY_I:
-        case GLFW_KEY_ESCAPE: {
             op_list.selected = 0;
             op_list.is_open = false;
-            update_option_list(&op_list, glfwGetTime());
-        }; break;
-        case GLFW_KEY_UP: {
-            if (op_list.selected > 0) {
-                op_list.selected--;
-            }
-        } break;
-        case GLFW_KEY_DOWN: {
-            if (op_list.selected < op_list.items_count - 1) {
-                op_list.selected++;
-            }
-        } break;
-        case GLFW_KEY_ENTER: {
-            const char *current = op_list.items[op_list.selected].title;
-            if (strcmp(current, "Information") == 0) {
-                state.show_info = true;
-            }
-        } break;
-        };
-        return;
-    }
-
-    if (state.show_preview) {
-        if (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_P) {
-            memset(state.buffer, 0, 512);
-            state.show_preview = false;
+            update_option_list(&op_list, current_time);
         }
-
-        return;
+        return true;
     }
+    }
+    return false;
+}
 
+bool handle_global_key(GLFWwindow *window, int key, float current_time) {
     switch (key) {
-    case GLFW_KEY_ESCAPE: {
+    case GLFW_KEY_ESCAPE:
         glfwSetWindowShouldClose(window, GL_TRUE);
-    } break;
-    case GLFW_KEY_EQUAL: {
+        return true;
+    case GLFW_KEY_EQUAL:
         if (state.theme < 20)
             state.theme++;
-    } break;
-    case GLFW_KEY_MINUS: {
+        return true;
+    case GLFW_KEY_MINUS:
         if (state.theme > 0)
             state.theme--;
-    } break;
-    case GLFW_KEY_LEFT: {
-        if (state.depth > 0)
-            return;
+        return true;
+    case GLFW_KEY_I:
+        op_list.is_open = true;
+        update_option_list(&op_list, current_time);
+        return true;
+    }
+    return false;
+}
+
+bool handle_hr_list_key(int key, float current_time) {
+    if (hr_list.depth > 0)
+        return false;
+
+    switch (key) {
+    case GLFW_KEY_LEFT:
         if (hr_list.selected > 0) {
             hr_list.selected--;
-
             hr_list_update();
-            state.depth = 0;
-
             switch_directory(fm, horizontalItems[hr_list.selected].path);
-
             vr_list.selected = 0;
             vr_list_update();
+            return true;
         }
-    } break;
-    case GLFW_KEY_RIGHT: {
-        if (state.depth > 0)
-            return;
-
+        break;
+    case GLFW_KEY_RIGHT:
         if (hr_list.selected < hr_list.items_count - 1) {
             hr_list.selected++;
-
             hr_list_update();
-
-            state.depth = 0;
-
             switch_directory(fm, horizontalItems[hr_list.selected].path);
-
             vr_list.selected = 0;
             vr_list_update();
+            return true;
         }
-    } break;
-    case GLFW_KEY_UP: {
+        break;
+    }
+    return false;
+}
+
+bool handle_vr_list_key(int key, float current_time) {
+    switch (key) {
+    case GLFW_KEY_UP:
         if (vr_list.selected > 0) {
             vr_list.selected--;
-
             vr_list_update();
+            return true;
         }
-    } break;
-    case GLFW_KEY_DOWN: {
+        break;
+    case GLFW_KEY_DOWN:
         if (vr_list.selected < vr_list.entry_end - 1) {
             vr_list.selected++;
-
             vr_list_update();
+            return true;
         }
-    } break;
-    case GLFW_KEY_PAGE_UP: {
+        break;
+    case GLFW_KEY_PAGE_UP:
         if (vr_list.selected > 0) {
-            vr_list.selected = vr_list.selected > 10 ? vr_list.selected - 10 : 0;
-
+            vr_list.selected = (vr_list.selected > 10) ? vr_list.selected - 10 : 0;
             vr_list_update();
+            return true;
         }
-    } break;
-    case GLFW_KEY_PAGE_DOWN: {
+        break;
+    case GLFW_KEY_PAGE_DOWN:
         if (vr_list.selected < vr_list.entry_end - 1) {
             vr_list.selected =
-                vr_list.selected < vr_list.entry_end - 10 ? vr_list.selected + 10 : vr_list.entry_end - 1;
-
+                (vr_list.selected < vr_list.entry_end - 10) ? vr_list.selected + 10 : vr_list.entry_end - 1;
             vr_list_update();
+            return true;
         }
-    } break;
-    case GLFW_KEY_HOME: {
+        break;
+    case GLFW_KEY_HOME:
         vr_list.selected = 0;
         vr_list_update();
-    } break;
-    case GLFW_KEY_END: {
+        return true;
+    case GLFW_KEY_END:
         vr_list.selected = vr_list.items_count - 1;
         vr_list_update();
-    } break;
+        return true;
+    }
+    return false;
+}
 
-    case GLFW_KEY_P: {
-        struct file_entry *current = fm->current_dir->children[vr_list.selected];
-        if (current->type == TYPE_FILE && get_mime_type(current->path, "text/")) {
-            read_file_content(current->path, state.buffer, 512);
-            state.show_preview = true;
-        }
-    } break;
-    case GLFW_KEY_I: {
-        op_list.is_open = true;
-        update_option_list(&op_list, glfwGetTime());
-    } break;
-    case GLFW_KEY_BACKSPACE: {
-        if (state.depth == 0)
-            return;
-        state.depth--;
-        if (state.depth == 0)
-            hr_list.depth = 0;
+bool handle_file_entry_key(int key, float current_time) {
+    struct file_entry *current = fm->current_dir->children[vr_list.selected];
 
+    switch (key) {
+    case GLFW_KEY_BACKSPACE:
+        if (hr_list.depth == 0)
+            return false;
+        hr_list.depth--;
         vr_list.selected = navigate_back(fm);
-
         vr_list_update();
-
         hr_list_update();
-    } break;
-    case GLFW_KEY_ENTER: {
-        struct file_entry *current = fm->current_dir->children[vr_list.selected];
+        return true;
+    case GLFW_KEY_ENTER:
         if (current->type == TYPE_DIRECTORY) {
-            state.depth++;
-
-            hr_list.depth = 1;
-
+            hr_list.depth++;
             change_directory(fm, current->path);
             vr_list.selected = 0;
             vr_list_update();
@@ -236,8 +213,51 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         } else if (current->type == TYPE_FILE) {
             open_file(current->path);
         }
-    } break;
+        return true;
+    case GLFW_KEY_P:
+        if (current->type == TYPE_FILE && get_mime_type(current->path, "text/")) {
+            read_file_content(current->path, state.buffer, 512);
+            state.show_preview = true;
+        }
+        return true;
     }
+    return false;
+}
+
+void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    if (action != GLFW_PRESS)
+        return;
+
+    // Global ESC to close info or preview
+    if (state.show_info && key == GLFW_KEY_ESCAPE) {
+        state.show_info = false;
+        return;
+    }
+
+    if (state.show_preview && (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_P)) {
+        memset(state.buffer, 0, 512);
+        state.show_preview = false;
+        return;
+    }
+
+    float current_time = glfwGetTime();
+
+    // Option list mode
+    if (op_list.is_open) {
+        if (handle_op_list_key(key, current_time))
+            return;
+        return;
+    }
+
+    // Main view mode
+    if (handle_global_key(window, key, current_time))
+        return;
+    if (handle_hr_list_key(key, current_time))
+        return;
+    if (handle_vr_list_key(key, current_time))
+        return;
+    if (handle_file_entry_key(key, current_time))
+        return;
 }
 
 // Initialization of menu data
