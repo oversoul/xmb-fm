@@ -67,33 +67,39 @@ void vr_list_update() {
 }
 
 bool handle_op_list_key(int key, float current_time) {
-    switch (key) {
-    case GLFW_KEY_I:
-    case GLFW_KEY_ESCAPE:
-        op_list.selected = 0;
-        op_list.is_open = false;
-        update_option_list(&op_list, current_time);
-        return true;
-    case GLFW_KEY_UP:
-        if (op_list.selected > 0)
-            op_list.selected--;
-        return true;
-    case GLFW_KEY_DOWN:
-        if (op_list.selected < op_list.items_count - 1)
-            op_list.selected++;
-        return true;
-    case GLFW_KEY_ENTER: {
-        const char *current = op_list.items[op_list.selected].title;
-        if (strcmp(current, "Information") == 0) {
-
-            state.show_info = true;
-
+    if (op_list.is_open) {
+        switch (key) {
+        case GLFW_KEY_I:
+        case GLFW_KEY_ESCAPE:
             op_list.selected = 0;
             op_list.is_open = false;
             update_option_list(&op_list, current_time);
+            return true;
+        case GLFW_KEY_UP:
+            if (op_list.selected > 0)
+                op_list.selected--;
+            return true;
+        case GLFW_KEY_DOWN:
+            if (op_list.selected < op_list.items_count - 1)
+                op_list.selected++;
+            return true;
+        case GLFW_KEY_ENTER:
+            const char *current = op_list.items[op_list.selected].title;
+            if (strcmp(current, "Information") == 0) {
+                state.show_info = true;
+
+                op_list.selected = 0;
+                op_list.is_open = false;
+                update_option_list(&op_list, current_time);
+            }
+            return true;
         }
-        return true;
     }
+
+    if (key == GLFW_KEY_I) {
+        op_list.is_open = true;
+        update_option_list(&op_list, current_time);
+        return true;
     }
     return false;
 }
@@ -110,10 +116,6 @@ bool handle_global_key(GLFWwindow *window, int key, float current_time) {
     case GLFW_KEY_MINUS:
         if (state.theme > 0)
             state.theme--;
-        return true;
-    case GLFW_KEY_I:
-        op_list.is_open = true;
-        update_option_list(&op_list, current_time);
         return true;
     }
     return false;
@@ -243,11 +245,8 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
     float current_time = glfwGetTime();
 
     // Option list mode
-    if (op_list.is_open) {
-        if (handle_op_list_key(key, current_time))
-            return;
+    if (handle_op_list_key(key, current_time))
         return;
-    }
 
     // Main view mode
     if (handle_global_key(window, key, current_time))
