@@ -30,7 +30,6 @@ typedef struct {
 } State;
 
 State state = {0};
-HrItem horizontalItems[10];
 
 FileManager *fm;
 OptionList op_list;
@@ -130,7 +129,7 @@ bool handle_hr_list_key(int key, float current_time) {
         if (hr_list.selected > 0) {
             hr_list.selected--;
             hr_list_update();
-            switch_directory(fm, horizontalItems[hr_list.selected].path);
+            switch_directory(fm, hr_list.items[hr_list.selected].path);
             vr_list.selected = 0;
             vr_list_update();
             return true;
@@ -140,7 +139,7 @@ bool handle_hr_list_key(int key, float current_time) {
         if (hr_list.selected < hr_list.items_count - 1) {
             hr_list.selected++;
             hr_list_update();
-            switch_directory(fm, horizontalItems[hr_list.selected].path);
+            switch_directory(fm, hr_list.items[hr_list.selected].path);
             vr_list.selected = 0;
             vr_list_update();
             return true;
@@ -261,57 +260,9 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
 
 // Initialization of menu data
 void initialize_menu_data() {
-    const char *homedir;
+    init_horizontal_list(&hr_list);
 
-    if ((homedir = getenv("HOME")) == NULL) {
-        homedir = getpwuid(getuid())->pw_dir;
-    }
-
-    // Users category
-    strcpy(horizontalItems[0].title, "Home");
-    strcpy(horizontalItems[0].path, homedir);
-    strcpy(horizontalItems[0].icon, "\ue977");
-
-    // Settings category
-    strcpy(horizontalItems[1].title, "Desktop");
-    sprintf(horizontalItems[1].path, "%s/%s", homedir, "Desktop");
-    strcpy(horizontalItems[1].icon, "\ue9b7");
-
-    // Add more categories like in the Vue code
-    strcpy(horizontalItems[2].title, "Documents");
-    sprintf(horizontalItems[2].path, "%s/%s", homedir, "Documents");
-    strcpy(horizontalItems[2].icon, "\ue909");
-
-    // Songs category
-    strcpy(horizontalItems[3].title, "Downloads");
-    sprintf(horizontalItems[3].path, "%s/%s", homedir, "Downloads");
-    strcpy(horizontalItems[3].icon, "\ue95f");
-
-    // Movies category
-    strcpy(horizontalItems[4].title, "Pictures");
-    sprintf(horizontalItems[4].path, "%s/%s", homedir, "Pictures");
-    strcpy(horizontalItems[4].icon, "\ue978");
-
-    // Games category
-    strcpy(horizontalItems[5].title, "Public");
-    sprintf(horizontalItems[5].path, "%s/%s", homedir, "Public");
-    strcpy(horizontalItems[5].icon, "\ueA07");
-
-    // Network category
-    strcpy(horizontalItems[6].title, "Videos");
-    sprintf(horizontalItems[6].path, "%s/%s", homedir, "Videos");
-    strcpy(horizontalItems[6].icon, "\ue94d");
-
-    // Friends category
-    strcpy(horizontalItems[7].title, "File System");
-    strcpy(horizontalItems[7].path, "/");
-    strcpy(horizontalItems[7].icon, "\ue958");
-
-    fm = create_file_manager(horizontalItems[hr_list.selected].path);
-
-    // Initialize animation state
-    hr_list.items = horizontalItems;
-    hr_list.items_count = 8;
+    fm = create_file_manager(hr_list.items[hr_list.selected].path);
 
     // vr
     vr_list.above_subitem_offset = 0.0f;
