@@ -1,6 +1,7 @@
 #include "animation.h"
 #include "fm.h"
 #include <GL/glew.h>
+#include "option_list.h"
 #include "ribbon.h"
 #include "ui.h"
 #include <stdio.h>
@@ -33,6 +34,7 @@ State state = {0};
 HrItem horizontalItems[10];
 
 FileManager *fm;
+OptionList op_list;
 VerticalList vr_list;
 HorizontalList hr_list;
 
@@ -82,11 +84,47 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
     if (action != GLFW_PRESS)
         return;
 
+    if (state.show_info) {
+        if (key == GLFW_KEY_ESCAPE) {
+            state.show_info = false;
+        }
+        return;
+    }
+
+    if (op_list.is_open) {
+        switch (key) {
+        case GLFW_KEY_I:
+        case GLFW_KEY_ESCAPE: {
+            op_list.selected = 0;
+            op_list.is_open = false;
+            update_option_list(&op_list, glfwGetTime());
+        }; break;
+        case GLFW_KEY_UP: {
+            if (op_list.selected > 0) {
+                op_list.selected--;
+            }
+        } break;
+        case GLFW_KEY_DOWN: {
+            if (op_list.selected < op_list.items_count - 1) {
+                op_list.selected++;
+            }
+        } break;
+        case GLFW_KEY_ENTER: {
+            const char *current = op_list.items[op_list.selected].title;
+            if (strcmp(current, "Information") == 0) {
+                state.show_info = true;
+            }
+        } break;
+        };
+        return;
+    }
+
     if (state.show_preview) {
         if (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_P) {
             memset(state.buffer, 0, 512);
             state.show_preview = false;
         }
+
         return;
     }
 
@@ -180,7 +218,8 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         }
     } break;
     case GLFW_KEY_I: {
-        state.show_info = !state.show_info;
+        op_list.is_open = true;
+        update_option_list(&op_list, glfwGetTime());
     } break;
     case GLFW_KEY_BACKSPACE: {
         if (state.depth == 0)
@@ -333,8 +372,17 @@ int main() {
         return -1;
     }
 
+    state.theme = 2; // electric_blue
     srand(time(NULL));
     initialize_menu_data();
+
+    op_list.items_count = 5;
+    op_list.items = malloc(sizeof(Option) * op_list.items_count);
+    op_list.items[0] = (Option){"Cut"};
+    op_list.items[1] = (Option){"Copy"};
+    op_list.items[2] = (Option){"Rename"};
+    op_list.items[3] = (Option){"Delete"};
+    op_list.items[4] = (Option){"Information"};
 
     vr_list_update();
 
@@ -355,15 +403,18 @@ int main() {
         start_frame(width, height);
         draw_background(state.width, state.height, state.theme);
 
-        draw_folder_path(&hr_list, fm->current_dir->path, 200, 160);
-        draw_vertical_list(&vr_list, 180);
-        draw_horizontal_menu(&hr_list, 180, 150);
+        if (!state.show_info) {
+            draw_folder_path(&hr_list, fm->current_dir->path, 200, 160);
+            draw_vertical_list(&vr_list, 180);
+            draw_horizontal_menu(&hr_list, 180, 150);
 
-        if (state.show_preview) {
-            draw_text_preview(state.buffer, state.width, state.height);
-        }
+            if (state.show_preview) {
+                draw_text_preview(state.buffer, state.width, state.height);
+            }
 
-        if (state.show_info) {
+            draw_option_list(&op_list, state.width, state.height);
+
+        } else {
             draw_info(&vr_list, state.width, state.height);
         }
 
@@ -376,6 +427,7 @@ int main() {
         glfwPollEvents();
     }
 
+    free(op_list.items);
     free_file_manager(fm);
     gfx_animation_clean();
 

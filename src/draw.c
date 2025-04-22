@@ -363,32 +363,15 @@ char *readable_fs(double bytes, char *buf) {
 }
 
 static float draw_section(float x, float y, const char *key, const char *value, Color color, float max_width) {
-    draw_text(14, x, y, key, color);
-    y += 30;
-    float size = draw_wrapped_text(16, x, y, value, color, max_width);
-    return size + 30;
+    draw_text(16, x, y, key, color);
+    draw_wrapped_text(16, x + 160, y, value, color, max_width);
+    return 16;
 }
 
 void draw_info(const VerticalList *vr_list, float width, float height) {
     struct file_entry *current = vr_list->items[vr_list->selected];
     if (current == NULL)
         return;
-
-    float rect_w = 400;
-    float x = width - rect_w;
-    float y = 200;
-
-    begin_rect(x, 0);
-    rect_size(rect_w, height);
-    Color black = {0, 0, 0, .6};
-    Color transparent = {0, 0, 0, 0};
-    rect_gradient4(black, transparent, transparent, black);
-    end_rect();
-
-    float gap = 20;
-    float padding = 20;
-    x += padding;
-    float wrap_width = rect_w - padding * 2;
 
     use_font("sans");
     Color color = {1, 1, 1, 1};
@@ -404,9 +387,43 @@ void draw_info(const VerticalList *vr_list, float width, float height) {
     char modified_timbuf[80];
     strftime(modified_timbuf, sizeof(access_timbuf), "%c", &access_lt);
 
-    y += draw_section(x, y, "Name:", current->name, color, wrap_width) + gap;
-    y += draw_section(x, y, "Path:", current->path, color, wrap_width) + gap;
-    y += draw_section(x, y, "Access Time:", access_timbuf, color, wrap_width) + gap;
-    y += draw_section(x, y, "Modified Time:", modified_timbuf, color, wrap_width) + gap;
-    draw_section(x, y, "Size:", readable_fs(current->size, buf), color, wrap_width);
+    float x = 100;
+    float y = 100;
+    float gap = 20;
+    float wrap_width = width - 40;
+    float total_height = 5 * 16 + gap * 4;
+    y = height / 2 - total_height / 2;
+
+    y += draw_section(x, y, "         Name", current->name, color, wrap_width) + gap;
+    y += draw_section(x, y, "         Path", current->path, color, wrap_width) + gap;
+    y += draw_section(x, y, "  Access Time", access_timbuf, color, wrap_width) + gap;
+    y += draw_section(x, y, "Modified Time", modified_timbuf, color, wrap_width) + gap;
+    y += draw_section(x, y, "         Size", readable_fs(current->size, buf), color, wrap_width);
+}
+
+void draw_option_list(OptionList *op_list, float width, float height) {
+
+    if (op_list->items_count == 0)
+        return;
+
+    float rect_w = 400;
+    float x = width + op_list->x;
+
+    begin_rect(x, 0);
+    rect_size(rect_w, height);
+    Color black = {0, 0, 0, .8};
+    Color transparent = {0, 0, 0, 0};
+    rect_gradient4(black, transparent, transparent, black);
+    end_rect();
+
+    Color muted_color = {1, 1, 1, .4};
+    Color color = {1, 1, 1, 1};
+
+    float total_height = 40. * op_list->items_count;
+    float start_y = height / 2 - total_height / 2;
+
+    use_font("sans");
+    for (size_t i = 0; i < op_list->items_count; ++i) {
+        draw_text(16, x + 20, start_y + 40 * i, op_list->items[i].title, op_list->selected == i ? color : muted_color);
+    }
 }
