@@ -411,9 +411,11 @@ void draw_option_list(OptionList *op_list, float width, float height) {
 
     begin_rect(x, 0);
     rect_size(rect_w, height);
-    Color black = {0, 0, 0, .8};
-    Color transparent = {0, 0, 0, 0};
-    rect_gradient4(black, transparent, transparent, black);
+    Color main_color = gradient_electric_blue[2];
+    main_color.a = .5;
+    Color sub_color = gradient_electric_blue[3];
+    sub_color.a = .5;
+    rect_gradient4(main_color, sub_color, sub_color, main_color);
     end_rect();
 
     Color muted_color = {1, 1, 1, .4};
