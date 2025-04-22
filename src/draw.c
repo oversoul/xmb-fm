@@ -380,7 +380,9 @@ void draw_info(const VerticalList *vr_list, float width, float height) {
 
     begin_rect(x, 0);
     rect_size(rect_w, height);
-    rect_color(0, 0, 0, .6);
+    Color black = {0, 0, 0, .6};
+    Color transparent = {0, 0, 0, 0};
+    rect_gradient4(black, transparent, transparent, black);
     end_rect();
 
     float gap = 20;
@@ -389,30 +391,22 @@ void draw_info(const VerticalList *vr_list, float width, float height) {
     float wrap_width = rect_w - padding * 2;
 
     use_font("sans");
+    Color color = {1, 1, 1, 1};
 
-    float s = 0;
-    s = draw_section(x, y, "Name:", current->name, (Color){1, 1, 1, 1}, wrap_width);
-    y += s + gap;
-
-    s = draw_section(x, y, "Path:", current->path, (Color){1, 1, 1, 1}, wrap_width);
-    y += s + gap;
-
+    char buf[20];
     struct tm access_lt;
     localtime_r(&current->access_time, &access_lt);
     char access_timbuf[80];
     strftime(access_timbuf, sizeof(access_timbuf), "%c", &access_lt);
-
-    s = draw_section(x, y, "Access Time:", access_timbuf, (Color){1, 1, 1, 1}, wrap_width);
-    y += s + gap;
 
     struct tm modified_lt;
     localtime_r(&current->modified_time, &modified_lt);
     char modified_timbuf[80];
     strftime(modified_timbuf, sizeof(access_timbuf), "%c", &access_lt);
 
-    s = draw_section(x, y, "Modified Time:", modified_timbuf, (Color){1, 1, 1, 1}, wrap_width);
-    y += s + gap;
-
-    char buf[20];
-    draw_section(x, y, "Size:", readable_fs(current->size, buf), (Color){1, 1, 1, 1}, wrap_width);
+    y += draw_section(x, y, "Name:", current->name, color, wrap_width) + gap;
+    y += draw_section(x, y, "Path:", current->path, color, wrap_width) + gap;
+    y += draw_section(x, y, "Access Time:", access_timbuf, color, wrap_width) + gap;
+    y += draw_section(x, y, "Modified Time:", modified_timbuf, color, wrap_width) + gap;
+    draw_section(x, y, "Size:", readable_fs(current->size, buf), color, wrap_width);
 }
