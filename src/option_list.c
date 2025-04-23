@@ -3,55 +3,71 @@
 #include <GLFW/glfw3.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
-bool handle_option_list_key(OptionList *op_list, int key, float current_time) {
-    if (op_list->is_open) {
+bool handle_option_list_key(OptionList *list, int key, float current_time) {
+    if (list->depth > 0) {
         switch (key) {
         case GLFW_KEY_I:
         case GLFW_KEY_ESCAPE:
-            op_list->selected = 0;
-            op_list->is_open = false;
-            update_option_list(op_list, current_time);
+            list->depth--;
+            list->current->selected = 0;
+            if (list->current->parent)
+                list->current = list->current->parent;
+            update_option_list(list, current_time);
             return true;
         case GLFW_KEY_UP:
-            if (op_list->selected > 0)
-                op_list->selected--;
+            if (list->current->selected > 0)
+                list->current->selected--;
             return true;
         case GLFW_KEY_DOWN:
-            if (op_list->selected < op_list->items_count - 1)
-                op_list->selected++;
+            if (list->current->selected < list->current->items_count - 1)
+                list->current->selected++;
             return true;
         case GLFW_KEY_ENTER:
-            if (op_list->on_item_selected != NULL) {
-                op_list->on_item_selected(&op_list->items[op_list->selected]);
-                op_list->selected = 0;
-                op_list->is_open = false;
-                update_option_list(op_list, current_time);
+            Option *current = &list->current->items[list->current->selected];
+            if (current->submenu && current->submenu->items_count > 0) {
+                list->depth++;
+                list->current = current->submenu;
+                update_option_list(list, current_time);
+                return true;
+            }
+
+            if (list->on_item_selected != NULL) {
+                list->on_item_selected(current);
+                if (list->current->parent)
+                    list->current = list->current->parent;
+                list->current->selected = 0;
+                list->depth--;
+                update_option_list(list, current_time);
             }
 
             return true;
         }
+        return true;
     }
 
     if (key == GLFW_KEY_I) {
-        op_list->is_open = true;
-        update_option_list(op_list, current_time);
+        list->depth = 1;
+        update_option_list(list, current_time);
         return true;
     }
 
     return false;
 }
 
-void update_option_list(OptionList *list, float current_time) {
+void update_option_list(OptionList *op_list, float current_time) {
     // if (list->items_count == 0)
     //     return;
 
-    animation_push(0.2, current_time, (list->is_open ? -400 : 0), &list->x, OptionListTag);
+    Options *list = op_list->current;
+
+    animation_push(0.2, current_time, op_list->depth * -(float)OPTION_LIST_WIDTH, &op_list->x, OptionListTag);
 
     uint32_t height = 0;
     uint32_t end = list->items_count;
-    if (list->get_screen_size != NULL) {
-        list->get_screen_size(NULL, &height);
+    if (op_list->get_screen_size != NULL) {
+        op_list->get_screen_size(NULL, &height);
     }
 
     for (size_t i = 0; i < end; i++) {

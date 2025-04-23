@@ -402,31 +402,44 @@ void draw_info(const VerticalList *vr_list, float width, float height) {
     y += draw_section(x, y, "         Size", readable_fs(current->size, buf), color, wrap_width);
 }
 
+void draw_option_list_depth(float x, float y, Options *list) {
+    Color color = {1, 1, 1, 1};
+    Color muted_color = {1, 1, 1, .5};
+    float rect_w = OPTION_LIST_WIDTH;
+
+    for (size_t i = 0; i < list->items_count; ++i) {
+        use_font("sans");
+        draw_text(16, x + 20, y + 40 * i, list->items[i].title, i == list->selected ? color : muted_color);
+        if (list->items[i].submenu) {
+            use_font("icon");
+            draw_text(16, x + rect_w - 40, y + 40 * i, "\ue942", i == list->selected ? color : muted_color);
+        }
+    }
+}
+
 void draw_option_list(OptionList *op_list, float width, float height) {
-
-    if (op_list->items_count == 0)
-        return;
-
-    float rect_w = 400;
+    float rect_w = OPTION_LIST_WIDTH;
     float x = width + op_list->x;
 
     begin_rect(x, 0);
-    rect_size(rect_w, height);
-    Color main_color = gradient_electric_blue[2];
-    main_color.a = .5;
-    Color sub_color = gradient_electric_blue[3];
-    sub_color.a = .5;
-    rect_gradient4(main_color, sub_color, sub_color, main_color);
+    rect_size(x + width, height);
+    rect_gradient_sides((Color){0, 0, 0, .8}, (Color){0, 0, 0, .3});
     end_rect();
 
-    Color muted_color = {1, 1, 1, .4};
-    Color color = {1, 1, 1, 1};
+    Options *menus[op_list->depth == 0 ? 1 : op_list->depth]; // Assuming max depth of 10
+    int depth = 0;
 
-    float total_height = 40. * op_list->items_count;
-    float start_y = height / 2 - total_height / 2;
+    // Start from current and go to root
+    Options *current = op_list->current;
+    while (current) {
+        menus[depth++] = current;
+        current = current->parent;
+    }
 
-    use_font("sans");
-    for (size_t i = 0; i < op_list->items_count; ++i) {
-        draw_text(16, x + 20, start_y + 40 * i, op_list->items[i].title, op_list->selected == i ? color : muted_color);
+    for (int i = depth - 1; i >= 0; i--) {
+        float total_height = 40. * menus[i]->items_count;
+        float start_y = height / 2 - total_height / 2;
+
+        draw_option_list_depth(x + (depth - 1 - i) * rect_w, start_y, menus[i]);
     }
 }

@@ -36,6 +36,35 @@ OptionList op_list;
 VerticalList vr_list;
 HorizontalList hr_list;
 
+Option options_items[] = {
+    {.title = "Option 1"},
+    {.title = "Option 2"},
+    {.title = "Option 3"},
+};
+
+Options options = {
+    .selected = 0,
+    .items = options_items,
+    .items_count = sizeof(options_items) / sizeof(Option),
+    .parent = NULL,
+};
+
+Option root_items[] = {
+    {.title = "Cut"},         //
+    {.title = "Copy"},        //
+    {.title = "Rename"},      //
+    {.title = "Delete"},      //
+    {.title = "Information"}, //
+    {.title = "More"},        //
+};
+
+Options root = {
+    .items = root_items,
+    .items_count = sizeof(root_items) / sizeof(Option),
+    .selected = 0,
+    .parent = NULL,
+};
+
 void resize_callback(GLFWwindow *window, int w, int h) {
     glViewport(0, 0, w, h);
     state.width = w;
@@ -182,8 +211,10 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         return;
 
     // Global ESC to close info or preview
-    if (state.show_info && key == GLFW_KEY_ESCAPE) {
-        state.show_info = false;
+    if (state.show_info) {
+        if (key == GLFW_KEY_ESCAPE) {
+            state.show_info = false;
+        }
         return;
     }
 
@@ -229,16 +260,14 @@ void initialize_menu_data() {
     init_vertical_list(&vr_list);
     vr_list.get_screen_size = get_window_size;
 
-    // op
+    // options
     op_list.on_item_selected = op_list_option_selected;
 
-    op_list.items_count = 5;
-    op_list.items = malloc(sizeof(Option) * op_list.items_count);
-    op_list.items[0] = (Option){"Cut"};
-    op_list.items[1] = (Option){"Copy"};
-    op_list.items[2] = (Option){"Rename"};
-    op_list.items[3] = (Option){"Delete"};
-    op_list.items[4] = (Option){"Information"};
+    op_list.root = &root;
+    op_list.current = &root;
+
+    options.parent = &root;
+    root.items[5].submenu = &options;
 }
 
 int main() {
@@ -327,7 +356,6 @@ int main() {
             }
 
             draw_option_list(&op_list, state.width, state.height);
-
         } else {
             draw_info(&vr_list, state.width, state.height);
         }
@@ -341,7 +369,6 @@ int main() {
         glfwPollEvents();
     }
 
-    free(op_list.items);
     free_file_manager(fm);
     animation_clean();
 
