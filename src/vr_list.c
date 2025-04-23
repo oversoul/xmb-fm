@@ -2,6 +2,17 @@
 #include <stdio.h>
 #include "vr_list.h"
 
+void init_vertical_list(VerticalList *vr_list) {
+    vr_list->above_subitem_offset = 0.0f;
+    vr_list->above_item_offset = -1.5f;
+    vr_list->active_item_factor = 1.0f;
+    vr_list->under_item_offset = 1.0f;
+
+    vr_list->icon_size = 28.0;
+    vr_list->margins_screen_top = 200;
+    vr_list->icon_spacing_vertical = 50.0;
+}
+
 static float item_y(const VerticalList *list, int i, size_t current) {
     float icon_spacing_vertical = list->icon_spacing_vertical;
 

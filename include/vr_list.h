@@ -27,4 +27,5 @@ typedef struct {
     void (*get_screen_size)(unsigned *width, unsigned *height);
 } VerticalList;
 
+void init_vertical_list(VerticalList *list);
 void update_vertical_list(VerticalList *list, float current_time);

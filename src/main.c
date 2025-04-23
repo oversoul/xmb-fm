@@ -51,56 +51,18 @@ void get_window_size(unsigned *width, unsigned *height) {
     }
 }
 
-void hr_list_update() {
+void hr_list_update(float current_time) {
     gfx_animation_remove_by_tag(HorizontalListTag);
 
-    update_horizontal_list(&hr_list, glfwGetTime());
+    update_horizontal_list(&hr_list, current_time);
 }
 
-void vr_list_update() {
+void vr_list_update(float current_time) {
     gfx_animation_remove_by_tag(VerticalListTag);
 
     vr_list.items = fm->current_dir->children;
     vr_list.items_count = fm->current_dir->child_count;
-    update_vertical_list(&vr_list, glfwGetTime());
-}
-
-bool handle_op_list_key(int key, float current_time) {
-    if (op_list.is_open) {
-        switch (key) {
-        case GLFW_KEY_I:
-        case GLFW_KEY_ESCAPE:
-            op_list.selected = 0;
-            op_list.is_open = false;
-            update_option_list(&op_list, current_time);
-            return true;
-        case GLFW_KEY_UP:
-            if (op_list.selected > 0)
-                op_list.selected--;
-            return true;
-        case GLFW_KEY_DOWN:
-            if (op_list.selected < op_list.items_count - 1)
-                op_list.selected++;
-            return true;
-        case GLFW_KEY_ENTER:
-            const char *current = op_list.items[op_list.selected].title;
-            if (strcmp(current, "Information") == 0) {
-                state.show_info = true;
-
-                op_list.selected = 0;
-                op_list.is_open = false;
-                update_option_list(&op_list, current_time);
-            }
-            return true;
-        }
-    }
-
-    if (key == GLFW_KEY_I) {
-        op_list.is_open = true;
-        update_option_list(&op_list, current_time);
-        return true;
-    }
-    return false;
+    update_vertical_list(&vr_list, current_time);
 }
 
 bool handle_global_key(GLFWwindow *window, int key, float current_time) {
@@ -134,10 +96,10 @@ bool handle_hr_list_key(int key, float current_time) {
     }
 
     if (updated) {
-        hr_list_update();
+        hr_list_update(current_time);
         switch_directory(fm, hr_list.items[hr_list.selected].path);
         vr_list.selected = 0;
-        vr_list_update();
+        vr_list_update(current_time);
         return true;
     }
 
@@ -178,7 +140,7 @@ bool handle_vr_list_key(int key, float current_time) {
     }
 
     if (updated) {
-        vr_list_update();
+        vr_list_update(current_time);
         return true;
     }
 
@@ -194,16 +156,16 @@ bool handle_file_entry_key(int key, float current_time) {
             return false;
         hr_list.depth--;
         vr_list.selected = navigate_back(fm);
-        vr_list_update();
-        hr_list_update();
+        vr_list_update(current_time);
+        hr_list_update(current_time);
         return true;
     case GLFW_KEY_ENTER:
         if (current->type == TYPE_DIRECTORY) {
             hr_list.depth++;
             change_directory(fm, current->path);
             vr_list.selected = 0;
-            vr_list_update();
-            hr_list_update();
+            vr_list_update(current_time);
+            hr_list_update(current_time);
         } else if (current->type == TYPE_FILE) {
             open_file(current->path);
         }
@@ -237,7 +199,7 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
     float current_time = glfwGetTime();
 
     // Option list mode
-    if (handle_op_list_key(key, current_time))
+    if (handle_option_list_key(&op_list, key, current_time))
         return;
 
     // Main view mode
@@ -251,6 +213,12 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         return;
 }
 
+void op_list_option_selected(Option *option) {
+    if (strcmp(option->title, "Information") == 0) {
+        state.show_info = true;
+    }
+}
+
 // Initialization of menu data
 void initialize_menu_data() {
     init_horizontal_list(&hr_list);
@@ -258,16 +226,19 @@ void initialize_menu_data() {
     fm = create_file_manager(hr_list.items[hr_list.selected].path);
 
     // vr
-    vr_list.above_subitem_offset = 0.0f;
-    vr_list.above_item_offset = -1.5f;
-    vr_list.active_item_factor = 1.0f;
-    vr_list.under_item_offset = 1.0f;
-
-    vr_list.icon_size = 28.0;
-    vr_list.margins_screen_top = 200;
-    vr_list.icon_spacing_vertical = 50.0;
-
+    init_vertical_list(&vr_list);
     vr_list.get_screen_size = get_window_size;
+
+    // op
+    op_list.on_item_selected = op_list_option_selected;
+
+    op_list.items_count = 5;
+    op_list.items = malloc(sizeof(Option) * op_list.items_count);
+    op_list.items[0] = (Option){"Cut"};
+    op_list.items[1] = (Option){"Copy"};
+    op_list.items[2] = (Option){"Rename"};
+    op_list.items[3] = (Option){"Delete"};
+    op_list.items[4] = (Option){"Information"};
 }
 
 int main() {
@@ -327,15 +298,7 @@ int main() {
     srand(time(NULL));
     initialize_menu_data();
 
-    op_list.items_count = 5;
-    op_list.items = malloc(sizeof(Option) * op_list.items_count);
-    op_list.items[0] = (Option){"Cut"};
-    op_list.items[1] = (Option){"Copy"};
-    op_list.items[2] = (Option){"Rename"};
-    op_list.items[3] = (Option){"Delete"};
-    op_list.items[4] = (Option){"Information"};
-
-    vr_list_update();
+    vr_list_update(glfwGetTime());
 
     while (!glfwWindowShouldClose(window)) {
         float current_time = glfwGetTime();

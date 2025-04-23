@@ -14,6 +14,8 @@ typedef struct {
     int items_count;
 
     void (*get_screen_size)(unsigned *width, unsigned *height);
+    void (*on_item_selected)(Option *option);
 } OptionList;
 
 void update_option_list(OptionList *list, float current_time);
+bool handle_option_list_key(OptionList *op_list, int key, float current_time);
