@@ -9,8 +9,8 @@ it's using OpenGL, FreeType, GLFW
 - Arrow Keys: up and down for vertical menu, left|right for horizontal menu.
 - Enter: open directory, open file using `xdg-open` (not fully tested).
 - Backspace: navigate to parent directory.
-- i: to see file info.
-- p: preview first 500 char of a file if detected as text file. (not always working)
+- i: to open options list
+- p: preview first 500 char of a file if detected as text file.
 - +/-: switch the themes
 - PAGE_UP/PAGE_DOWN: scroll up and down by 10.
 - HOME/END: scroll to start / end of list.
