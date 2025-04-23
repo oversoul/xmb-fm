@@ -65,7 +65,7 @@ void vr_list_update(float current_time) {
     update_vertical_list(&vr_list, current_time);
 }
 
-bool handle_global_key(GLFWwindow *window, int key, float current_time) {
+bool handle_global_key(int key, float current_time) {
     switch (key) {
     case GLFW_KEY_EQUAL:
         if (state.theme < 20)
@@ -200,7 +200,7 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         return;
 
     // Main view mode
-    if (handle_global_key(window, key, current_time))
+    if (handle_global_key(key, current_time))
         return;
     if (handle_hr_list_key(key, current_time))
         return;
