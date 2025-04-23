@@ -100,6 +100,8 @@ void begin_rect(float x, float y);
 void rect_size(float w, float h);
 void rect_color(float r, float g, float b, float a);
 void rect_gradient4(Color tl, Color tr, Color br, Color bl);
+void rect_gradient_topdown(Color top, Color bottom);
+void rect_gradient_sides(Color left, Color right);
 
 void rect_radius(float tl, float tr, float br, float bl);
 void rect_radius_all(float value);

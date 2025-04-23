@@ -622,6 +622,28 @@ void rect_color(float r, float g, float b, float a) {
         renderState.verts[renderState.vert_count - i].color = (Color){r, g, b, a};
 }
 
+void rect_gradient_topdown(Color top, Color bottom) {
+    if (!renderState.shape_in_progress)
+        return;
+
+    size_t vc = renderState.vert_count;
+    renderState.verts[vc - 4].color = top;    // top-left
+    renderState.verts[vc - 3].color = top;    // top-right
+    renderState.verts[vc - 2].color = bottom; // bottom-right
+    renderState.verts[vc - 1].color = bottom; // bottom-left
+}
+
+void rect_gradient_sides(Color left, Color right) {
+    if (!renderState.shape_in_progress)
+        return;
+
+    size_t vc = renderState.vert_count;
+    renderState.verts[vc - 4].color = left;  // top-left
+    renderState.verts[vc - 3].color = right; // top-right
+    renderState.verts[vc - 2].color = right; // bottom-right
+    renderState.verts[vc - 1].color = left;  // bottom-left
+}
+
 void rect_gradient4(Color tl, Color tr, Color br, Color bl) {
     if (!renderState.shape_in_progress)
         return;
