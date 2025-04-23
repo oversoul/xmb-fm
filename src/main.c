@@ -67,9 +67,6 @@ void vr_list_update(float current_time) {
 
 bool handle_global_key(GLFWwindow *window, int key, float current_time) {
     switch (key) {
-    case GLFW_KEY_ESCAPE:
-        glfwSetWindowShouldClose(window, true);
-        return true;
     case GLFW_KEY_EQUAL:
         if (state.theme < 20)
             state.theme++;
@@ -211,6 +208,9 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         return;
     if (handle_file_entry_key(key, current_time))
         return;
+
+    if (key == GLFW_KEY_ESCAPE)
+        glfwSetWindowShouldClose(window, true);
 }
 
 void op_list_option_selected(Option *option) {

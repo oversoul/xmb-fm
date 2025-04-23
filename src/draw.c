@@ -342,13 +342,14 @@ void draw_text_preview(const char *text, float width, float height) {
     end_rect();
 
     float padding = 20;
+    float content_width = width - 2 * x;
 
     x += padding;
     y += padding;
-    width -= padding * 2;
+    content_width -= padding * 2;
 
     use_font("sans");
-    draw_wrapped_text(16, x, y + 10, text, (Color){0, 0, 0, 1}, width);
+    draw_wrapped_text(16, x, y + 10, text, (Color){0, 0, 0, 1}, content_width);
 }
 
 char *readable_fs(double bytes, char *buf) {
