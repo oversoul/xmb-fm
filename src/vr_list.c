@@ -91,34 +91,10 @@ void update_vertical_list(VerticalList *list, float current_time) {
             node->zoom = zoom;
             node->alpha = node->label_alpha = label_alpha;
         } else {
-            /* Move up/down animation */
-            AnimatedProperty anim_entry;
-
-            anim_entry.duration = .2;
-
-            anim_entry.target = label_alpha;
-            anim_entry.subject = &node->alpha;
-            anim_entry.start_time = current_time;
-            gfx_animation_push(&anim_entry, VerticalListTag);
-
-            anim_entry.target = label_alpha;
-            anim_entry.subject = &node->label_alpha;
-            anim_entry.start_time = current_time;
-            gfx_animation_push(&anim_entry, VerticalListTag);
-
-            anim_entry.target = zoom;
-            anim_entry.duration = 0.05;
-            anim_entry.subject = &node->zoom;
-            anim_entry.start_time = current_time;
-
-            gfx_animation_push(&anim_entry, VerticalListTag);
-
-            anim_entry.target = y_pos;
-            anim_entry.duration = .2;
-            anim_entry.subject = &node->y;
-            anim_entry.start_time = current_time;
-
-            gfx_animation_push(&anim_entry, VerticalListTag);
+            animation_push(0.2, current_time, y_pos, &node->y, VerticalListTag);
+            animation_push(0.05, current_time, zoom, &node->zoom, VerticalListTag);
+            animation_push(0.2, current_time, label_alpha, &node->alpha, VerticalListTag);
+            animation_push(0.2, current_time, label_alpha, &node->label_alpha, VerticalListTag);
 
             // printf("IY: %f\n", iy);
             // node->y = iy;

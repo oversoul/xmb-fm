@@ -4,16 +4,16 @@
 
 animation_t anim_st = {0};
 
-void gfx_animation_push(AnimatedProperty *entry, AnimationTag tag) {
+void animation_push(float duration, float start_time, float target, float *subject, AnimationTag tag) {
     animation_t *p_anim = &anim_st;
 
     tween_t t = {
         .tag = tag,
-        .subject = entry->subject,
-        .duration = entry->duration,
-        .target_value = entry->target,
-        .initial_value = *entry->subject,
-        .start_time = entry->start_time,
+        .subject = subject,
+        .duration = duration,
+        .target_value = target,
+        .initial_value = *subject,
+        .start_time = start_time,
         .running_since = 0,
     };
 
@@ -69,7 +69,7 @@ void gfx_remove_animation(animation_t *p_anim, size_t i) {
     (p_anim->size)--;
 }
 
-void gfx_animation_update(float current_time) {
+void animation_update(float current_time) {
     animation_t *p_anim = &anim_st;
 
     // printf("animations: %zu\n", p_anim->size);
@@ -92,7 +92,7 @@ void gfx_animation_update(float current_time) {
     }
 }
 
-void gfx_animation_remove_by_tag(AnimationTag tag) {
+void animation_remove_by_tag(AnimationTag tag) {
     animation_t *p_anim = &anim_st;
 
     for (int i = 0; i < p_anim->size; ++i) {
@@ -105,7 +105,7 @@ void gfx_animation_remove_by_tag(AnimationTag tag) {
     }
 }
 
-void gfx_animation_clean() {
+void animation_clean() {
     animation_t *p_anim = &anim_st;
     if (!p_anim)
         return;

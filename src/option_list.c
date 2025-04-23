@@ -46,14 +46,7 @@ void update_option_list(OptionList *list, float current_time) {
     // if (list->items_count == 0)
     //     return;
 
-    AnimatedProperty anim;
-    anim.duration = 0.2;
-    anim.start_time = current_time;
-
-    anim.target = list->is_open ? -400 : 0;
-
-    anim.subject = &list->x;
-    gfx_animation_push(&anim, OptionListTag);
+    animation_push(0.2, current_time, (list->is_open ? -400 : 0), &list->x, OptionListTag);
 
     uint32_t height = 0;
     uint32_t end = list->items_count;

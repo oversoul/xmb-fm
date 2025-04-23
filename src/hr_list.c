@@ -60,16 +60,10 @@ void init_horizontal_list(HorizontalList *hr_list) {
 
 void update_horizontal_list(HorizontalList *hr_list, float current_time) {
     float offset = 150;
+    float target = hr_list->selected * offset;
 
-    AnimatedProperty anim;
-    anim.duration = 0.04;
-    anim.start_time = current_time;
-    anim.target = hr_list->selected * offset;
+    if (hr_list->depth > 0)
+        target += 50;
 
-    if (hr_list->depth > 0) {
-        anim.target += 50;
-    }
-
-    anim.subject = &hr_list->scroll;
-    gfx_animation_push(&anim, HorizontalListTag);
+    animation_push(0.04, current_time, target, &hr_list->scroll, HorizontalListTag);
 }

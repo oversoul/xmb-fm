@@ -11,13 +11,6 @@ typedef enum {
     HorizontalListTag,
 } AnimationTag;
 
-typedef struct {
-    float target;
-    float start_time;
-    float duration;
-    float *subject;
-} AnimatedProperty;
-
 struct tween {
     float duration;
     float initial_value;
@@ -38,7 +31,7 @@ struct animations {
 typedef struct tween tween_t;
 typedef struct animations animation_t;
 
-void gfx_animation_push(AnimatedProperty *entry, AnimationTag tag);
-void gfx_animation_update(float current_time);
-void gfx_animation_clean();
-void gfx_animation_remove_by_tag(AnimationTag tag);
+void animation_push(float duration, float start_time, float target, float *subject, AnimationTag tag);
+void animation_update(float current_time);
+void animation_clean();
+void animation_remove_by_tag(AnimationTag tag);

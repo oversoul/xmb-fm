@@ -52,13 +52,13 @@ void get_window_size(unsigned *width, unsigned *height) {
 }
 
 void hr_list_update(float current_time) {
-    gfx_animation_remove_by_tag(HorizontalListTag);
+    animation_remove_by_tag(HorizontalListTag);
 
     update_horizontal_list(&hr_list, current_time);
 }
 
 void vr_list_update(float current_time) {
-    gfx_animation_remove_by_tag(VerticalListTag);
+    animation_remove_by_tag(VerticalListTag);
 
     vr_list.items = fm->current_dir->children;
     vr_list.items_count = fm->current_dir->child_count;
@@ -303,7 +303,7 @@ int main() {
     while (!glfwWindowShouldClose(window)) {
         float current_time = glfwGetTime();
 
-        gfx_animation_update(current_time);
+        animation_update(current_time);
 
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
@@ -343,7 +343,7 @@ int main() {
 
     free(op_list.items);
     free_file_manager(fm);
-    gfx_animation_clean();
+    animation_clean();
 
     ui_delete();
 
