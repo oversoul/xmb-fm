@@ -106,7 +106,7 @@ bool handle_op_list_key(int key, float current_time) {
 bool handle_global_key(GLFWwindow *window, int key, float current_time) {
     switch (key) {
     case GLFW_KEY_ESCAPE:
-        glfwSetWindowShouldClose(window, GL_TRUE);
+        glfwSetWindowShouldClose(window, true);
         return true;
     case GLFW_KEY_EQUAL:
         if (state.theme < 20)
@@ -124,71 +124,64 @@ bool handle_hr_list_key(int key, float current_time) {
     if (hr_list.depth > 0)
         return false;
 
-    switch (key) {
-    case GLFW_KEY_LEFT:
-        if (hr_list.selected > 0) {
-            hr_list.selected--;
-            hr_list_update();
-            switch_directory(fm, hr_list.items[hr_list.selected].path);
-            vr_list.selected = 0;
-            vr_list_update();
-            return true;
-        }
-        break;
-    case GLFW_KEY_RIGHT:
-        if (hr_list.selected < hr_list.items_count - 1) {
-            hr_list.selected++;
-            hr_list_update();
-            switch_directory(fm, hr_list.items[hr_list.selected].path);
-            vr_list.selected = 0;
-            vr_list_update();
-            return true;
-        }
-        break;
+    bool updated = false;
+    if (key == GLFW_KEY_LEFT && hr_list.selected > 0) {
+        hr_list.selected--;
+        updated = true;
+    } else if (key == GLFW_KEY_RIGHT && hr_list.selected < hr_list.items_count - 1) {
+        hr_list.selected++;
+        updated = true;
     }
+
+    if (updated) {
+        hr_list_update();
+        switch_directory(fm, hr_list.items[hr_list.selected].path);
+        vr_list.selected = 0;
+        vr_list_update();
+        return true;
+    }
+
     return false;
 }
 
 bool handle_vr_list_key(int key, float current_time) {
-    switch (key) {
-    case GLFW_KEY_UP:
-        if (vr_list.selected > 0) {
-            vr_list.selected--;
-            vr_list_update();
-            return true;
-        }
-        break;
-    case GLFW_KEY_DOWN:
-        if (vr_list.selected < vr_list.entry_end - 1) {
-            vr_list.selected++;
-            vr_list_update();
-            return true;
-        }
-        break;
-    case GLFW_KEY_PAGE_UP:
-        if (vr_list.selected > 0) {
-            vr_list.selected = (vr_list.selected > 10) ? vr_list.selected - 10 : 0;
-            vr_list_update();
-            return true;
-        }
-        break;
-    case GLFW_KEY_PAGE_DOWN:
-        if (vr_list.selected < vr_list.entry_end - 1) {
-            vr_list.selected =
-                (vr_list.selected < vr_list.entry_end - 10) ? vr_list.selected + 10 : vr_list.entry_end - 1;
-            vr_list_update();
-            return true;
-        }
-        break;
-    case GLFW_KEY_HOME:
+    bool updated = false;
+
+    if (key == GLFW_KEY_UP && vr_list.selected > 0) {
+        vr_list.selected--;
+        updated = true;
+    }
+
+    if (key == GLFW_KEY_DOWN && vr_list.selected < vr_list.entry_end - 1) {
+        vr_list.selected++;
+        updated = true;
+    }
+
+    if (key == GLFW_KEY_PAGE_UP && vr_list.selected > 0) {
+        vr_list.selected = (vr_list.selected > 10) ? vr_list.selected - 10 : 0;
+        updated = true;
+    }
+
+    if (key == GLFW_KEY_PAGE_DOWN && vr_list.selected < vr_list.entry_end - 1) {
+        vr_list.selected = (vr_list.selected < vr_list.entry_end - 10) ? vr_list.selected + 10 : vr_list.entry_end - 1;
+        updated = true;
+    }
+
+    if (key == GLFW_KEY_HOME) {
         vr_list.selected = 0;
-        vr_list_update();
-        return true;
-    case GLFW_KEY_END:
+        updated = true;
+    }
+
+    if (key == GLFW_KEY_END) {
         vr_list.selected = vr_list.items_count - 1;
+        updated = true;
+    }
+
+    if (updated) {
         vr_list_update();
         return true;
     }
+
     return false;
 }
 
