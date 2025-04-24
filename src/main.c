@@ -343,7 +343,8 @@ int main() {
         int winWidth, winHeight;
         glfwGetWindowSize(window, &winWidth, &winHeight);
 
-        draw_ribbon(width, height, current_time, state.theme);
+        draw_background(width, height, state.theme);
+        draw_ribbon(width, height, current_time);
 
         start_frame(width, height);
 

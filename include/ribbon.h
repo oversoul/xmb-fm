@@ -13,4 +13,5 @@ typedef struct {
 } RibbonState;
 
 void init_ribbon();
-void draw_ribbon(float width, float height, float time, int theme);
+void draw_ribbon(float width, float height, float time);
+void draw_background(float width, float height, int theme);

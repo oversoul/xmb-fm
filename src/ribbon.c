@@ -376,7 +376,7 @@ void init_ribbon() {
     free(ribbon_indices);
 }
 
-void draw_ribbon(float width, float height, float time, int theme) {
+void draw_background(float width, float height, int theme) {
     glUseProgram(ribbonState.bg_program);
     glBindVertexArray(ribbonState.bg_vao);
 
@@ -396,7 +396,9 @@ void draw_ribbon(float width, float height, float time, int theme) {
     }
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
 
+void draw_ribbon(float width, float height, float time) {
     glUseProgram(ribbonState.ribbon_program);
     glUniform1f(glGetUniformLocation(ribbonState.ribbon_program, "time"), time);
 
