@@ -3,6 +3,177 @@
 
 RibbonState ribbonState = {};
 
+static Color gradient_golden[4] = {
+    {174 / 255.0, 123 / 255.0, 44 / 255.0, 1.0},
+    {205 / 255.0, 174 / 255.0, 84 / 255.0, 1.0},
+    {58 / 255.0, 43 / 255.0, 24 / 255.0, 1.0},
+    {58 / 255.0, 43 / 255.0, 24 / 255.0, 1.0},
+};
+
+static Color gradient_legacy_red[4] = {
+    {171 / 255.0, 70 / 255.0, 59 / 255.0, 1.0},
+    {171 / 255.0, 70 / 255.0, 59 / 255.0, 1.0},
+    {190 / 255.0, 80 / 255.0, 69 / 255.0, 1.0},
+    {190 / 255.0, 80 / 255.0, 69 / 255.0, 1.0},
+};
+
+static Color gradient_electric_blue[4] = {
+    {1 / 255.0, 2 / 255.0, 67 / 255.0, 1.0},
+    {1 / 255.0, 73 / 255.0, 183 / 255.0, 1.0},
+    {1 / 255.0, 93 / 255.0, 194 / 255.0, 1.0},
+    {3 / 255.0, 162 / 255.0, 254 / 255.0, 1.0},
+};
+
+static Color gradient_dark_purple[4] = {
+    {20 / 255.0, 13 / 255.0, 20 / 255.0, 1.0},
+    {20 / 255.0, 13 / 255.0, 20 / 255.0, 1.0},
+    {92 / 255.0, 44 / 255.0, 92 / 255.0, 1.0},
+    {148 / 255.0, 90 / 255.0, 148 / 255.0, 1.0},
+};
+
+static Color gradient_midnight_blue[4] = {
+    {44 / 255.0, 62 / 255.0, 80 / 255.0, 1.0},
+    {44 / 255.0, 62 / 255.0, 80 / 255.0, 1.0},
+    {44 / 255.0, 62 / 255.0, 80 / 255.0, 1.0},
+    {44 / 255.0, 62 / 255.0, 80 / 255.0, 1.0},
+};
+
+static Color gradient_apple_green[4] = {
+    {102 / 255.0, 134 / 255.0, 58 / 255.0, 1.0},
+    {122 / 255.0, 131 / 255.0, 52 / 255.0, 1.0},
+    {82 / 255.0, 101 / 255.0, 35 / 255.0, 1.0},
+    {63 / 255.0, 95 / 255.0, 30 / 255.0, 1.0},
+};
+
+static Color gradient_undersea[4] = {
+    {23 / 255.0, 18 / 255.0, 41 / 255.0, 1.0},
+    {30 / 255.0, 72 / 255.0, 114 / 255.0, 1.0},
+    {52 / 255.0, 88 / 255.0, 110 / 255.0, 1.0},
+    {69 / 255.0, 125 / 255.0, 140 / 255.0, 1.0},
+};
+
+static Color gradient_morning_blue[4] = {
+    {221 / 255.0, 241 / 255.0, 254 / 255.0, 1.0},
+    {135 / 255.0, 206 / 255.0, 250 / 255.0, 1.0},
+    {0.7, 0.7, 0.7, 1.0},
+    {170 / 255.0, 200 / 255.0, 252 / 255.0, 1.0},
+};
+
+static Color gradient_sunbeam[4] = {
+    {20 / 255.0, 13 / 255.0, 20 / 255.0, 1.0},
+    {30 / 255.0, 72 / 255.0, 114 / 255.0, 1.0},
+    {0.7, 0.7, 0.7, 1.0},
+    {0.1, 0.0, 0.1, 1.0},
+};
+
+static Color gradient_lime_green[4] = {
+    {209 / 255.0, 255 / 255.0, 82 / 255.0, 1.0},
+    {146 / 255.0, 232 / 255.0, 66 / 255.0, 1.0},
+    {82 / 255.0, 101 / 255.0, 35 / 255.0, 1.0},
+    {63 / 255.0, 95 / 255.0, 30 / 255.0, 1.0},
+};
+
+static Color gradient_pikachu_yellow[4] = {
+    {63 / 255.0, 63 / 255.0, 1 / 255.0, 1.0},
+    {174 / 255.0, 174 / 255.0, 1 / 255.0, 1.0},
+    {191 / 255.0, 194 / 255.0, 1 / 255.0, 1.0},
+    {254 / 255.0, 221 / 255.0, 3 / 255.0, 1.0},
+};
+
+static Color gradient_gamecube_purple[4] = {
+    {40 / 255.0, 20 / 255.0, 91 / 255.0, 1.0},
+    {160 / 255.0, 140 / 255.0, 211 / 255.0, 1.0},
+    {107 / 255.0, 92 / 255.0, 177 / 255.0, 1.0},
+    {84 / 255.0, 71 / 255.0, 132 / 255.0, 1.0},
+};
+
+static Color gradient_famicom_red[4] = {
+    {255 / 255.0, 191 / 255.0, 171 / 255.0, 1.0},
+    {119 / 255.0, 49 / 255.0, 28 / 255.0, 1.0},
+    {148 / 255.0, 10 / 255.0, 36 / 255.0, 1.0},
+    {206 / 255.0, 126 / 255.0, 110 / 255.0, 1.0},
+};
+
+static Color gradient_flaming_hot[4] = {
+    {231 / 255.0, 53 / 255.0, 53 / 255.0, 1.0},
+    {242 / 255.0, 138 / 255.0, 97 / 255.0, 1.0},
+    {236 / 255.0, 97 / 255.0, 76 / 255.0, 1.0},
+    {255 / 255.0, 125 / 255.0, 3 / 255.0, 1.0},
+};
+
+static Color gradient_ice_cold[4] = {
+    {66 / 255.0, 183 / 255.0, 229 / 255.0, 1.0},
+    {29 / 255.0, 164 / 255.0, 255 / 255.0, 1.0},
+    {176 / 255.0, 255 / 255.0, 247 / 255.0, 1.0},
+    {174 / 255.0, 240 / 255.0, 255 / 255.0, 1.0},
+};
+
+static Color gradient_midgar[4] = {
+    {255 / 255.0, 0 / 255.0, 0 / 255.0, 1.0},
+    {0 / 255.0, 0 / 255.0, 255 / 255.0, 1.0},
+    {0 / 255.0, 255 / 255.0, 0 / 255.0, 1.0},
+    {32 / 255.0, 32 / 255.0, 32 / 255.0, 1.0},
+};
+
+static Color gradient_volcanic_red[4] = {
+    {1.0, 0.0, 0.1, 1.0},
+    {1.0, 0.1, 0.0, 1.0},
+    {0.1, 0.0, 0.1, 1.0},
+    {0.1, 0.0, 0.1, 1.0},
+};
+
+static Color gradient_dark[4] = {
+    {0.05, 0.05, 0.05, 1.0},
+    {0.05, 0.05, 0.05, 1.0},
+    {0.05, 0.05, 0.05, 1.0},
+    {0.05, 0.05, 0.05, 1.0},
+};
+
+static Color gradient_light[4] = {
+    {0.50, 0.50, 0.50, 1.0},
+    {0.50, 0.50, 0.50, 1.0},
+    {0.50, 0.50, 0.50, 1.0},
+    {0.50, 0.50, 0.50, 1.0},
+};
+
+static Color gradient_gray_dark[4] = {
+    {16 / 255.0, 16 / 255.0, 16 / 255.0, 1.0},
+    {16 / 255.0, 16 / 255.0, 16 / 255.0, 1.0},
+    {16 / 255.0, 16 / 255.0, 16 / 255.0, 1.0},
+    {16 / 255.0, 16 / 255.0, 16 / 255.0, 1.0},
+};
+
+static Color gradient_gray_light[4] = {
+    {32 / 255.0, 32 / 255.0, 32 / 255.0, 1.0},
+    {32 / 255.0, 32 / 255.0, 32 / 255.0, 1.0},
+    {32 / 255.0, 32 / 255.0, 32 / 255.0, 1.0},
+    {32 / 255.0, 32 / 255.0, 32 / 255.0, 1.0},
+};
+
+Color *themes[] = {
+    gradient_golden,          //
+    gradient_legacy_red,      //
+    gradient_electric_blue,   //
+    gradient_dark_purple,     //
+    gradient_midnight_blue,   //
+    gradient_apple_green,     //
+    gradient_undersea,        //
+    gradient_morning_blue,    //
+    gradient_sunbeam,         //
+    gradient_lime_green,      //
+    gradient_pikachu_yellow,  //
+    gradient_gamecube_purple, //
+    gradient_famicom_red,     //
+    gradient_flaming_hot,     //
+    gradient_ice_cold,        //
+    gradient_midgar,          //
+    gradient_volcanic_red,    //
+    gradient_dark,            //
+    gradient_light,           //
+    gradient_gray_dark,       //
+    gradient_gray_light,      //
+};
+
 static void check_shader_error(uint32_t shader, const char *type) {
     GLint success;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
@@ -14,6 +185,59 @@ static void check_shader_error(uint32_t shader, const char *type) {
 }
 
 void init_ribbon() {
+    float fs_vertices[8] = {-1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f};
+
+    glGenVertexArrays(1, &ribbonState.bg_vao);
+    glGenBuffers(1, &ribbonState.bg_vbo);
+
+    glBindVertexArray(ribbonState.bg_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, ribbonState.bg_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(fs_vertices), fs_vertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
+
+    static const char *bg_vertex_shader_text = GLSL(         //
+        layout(location = 0) in vec2 pos;                    //
+        void main() { gl_Position = vec4(pos, 0.0, 1.0); }); //
+
+    static const char *bg_fragment_shader_text = GLSL( //
+        out vec4 FragColor;                            //
+        uniform vec2 u_resolution;                     //
+
+        uniform vec4 color0; // bottom‑left
+        uniform vec4 color1; // top‑left
+        uniform vec4 color2; // bottom‑right
+        uniform vec4 color3; // top‑right
+
+        void main() {
+            vec2 uv = gl_FragCoord.xy / u_resolution;
+            float t = uv.y;
+            vec4 top = mix(color0, color2, t);
+            vec4 bottom = mix(color1, color3, t);
+            float s = uv.x;
+            FragColor = mix(top, bottom, s);
+        });
+
+    const GLuint bg_vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(bg_vertex_shader, 1, &bg_vertex_shader_text, NULL);
+    glCompileShader(bg_vertex_shader);
+    check_shader_error(bg_vertex_shader, "vertex");
+
+    const GLuint bg_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(bg_fragment_shader, 1, &bg_fragment_shader_text, NULL);
+    glCompileShader(bg_fragment_shader);
+    check_shader_error(bg_fragment_shader, "fragment");
+
+    ribbonState.bg_program = glCreateProgram();
+    glAttachShader(ribbonState.bg_program, bg_vertex_shader);
+    glAttachShader(ribbonState.bg_program, bg_fragment_shader);
+    glLinkProgram(ribbonState.bg_program);
+
+    glDeleteShader(bg_vertex_shader);
+    glDeleteShader(bg_fragment_shader);
+
+    // ribbon
+
     glGenBuffers(1, &ribbonState.ribbon_vertex_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, ribbonState.ribbon_vertex_buffer);
 
@@ -152,7 +376,27 @@ void init_ribbon() {
     free(ribbon_indices);
 }
 
-void draw_ribbon(float width, float height, float time) {
+void draw_ribbon(float width, float height, float time, int theme) {
+    glUseProgram(ribbonState.bg_program);
+    glBindVertexArray(ribbonState.bg_vao);
+
+    Color *colors = themes[theme];
+
+    GLint locColors[4] = {
+        glGetUniformLocation(ribbonState.bg_program, "color0"),
+        glGetUniformLocation(ribbonState.bg_program, "color1"),
+        glGetUniformLocation(ribbonState.bg_program, "color2"),
+        glGetUniformLocation(ribbonState.bg_program, "color3"),
+    };
+
+    glUniform2f(glGetUniformLocation(ribbonState.bg_program, "u_resolution"), width, height);
+
+    for (size_t i = 0; i < 4; ++i) {
+        glUniform4f(locColors[i], colors[i].r, colors[i].g, colors[i].b, colors[i].a);
+    }
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
     glUseProgram(ribbonState.ribbon_program);
     glUniform1f(glGetUniformLocation(ribbonState.ribbon_program, "time"), time);
 

@@ -363,8 +363,6 @@ int main() {
 
         end_frame();
 
-        draw_ribbon(state.width, state.height, current_time);
-
         // Swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
