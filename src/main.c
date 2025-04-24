@@ -343,8 +343,9 @@ int main() {
         int winWidth, winHeight;
         glfwGetWindowSize(window, &winWidth, &winHeight);
 
+        draw_ribbon(width, height, current_time, state.theme);
+
         start_frame(width, height);
-        draw_background(state.width, state.height, state.theme);
 
         if (!state.show_info) {
             draw_folder_path(&hr_list, fm->current_dir->path, 200, 160);

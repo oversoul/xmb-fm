@@ -4,7 +4,6 @@
 #include "option_list.h"
 #include "vr_list.h"
 
-void draw_background(float width, float height, int theme);
 void draw_folder_path(const HorizontalList *hr_list, const char *path, float x, float y);
 void draw_vertical_list(const VerticalList *list, float x);
 void draw_horizontal_menu(const HorizontalList *hr_list, int x, int y);
