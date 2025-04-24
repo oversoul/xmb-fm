@@ -65,5 +65,5 @@ void update_horizontal_list(HorizontalList *hr_list, float current_time) {
     if (hr_list->depth > 0)
         target += 50;
 
-    animation_push(0.04, current_time, target, &hr_list->scroll, HorizontalListTag);
+    animation_push(0.2, current_time, target, &hr_list->scroll, HorizontalListTag);
 }

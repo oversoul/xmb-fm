@@ -132,6 +132,7 @@ void draw_vertical_list(const VerticalList *list, float start_x) {
 
         float ty = y + by / 2;
         float tx = x - sx;
+
         draw_text(fsize, tx + 50, ty, name, text_color);
     }
 
@@ -172,7 +173,7 @@ void draw_text_preview(const char *text, float width, float height) {
     draw_wrapped_text(16, x, y + 10, text, (Color){0, 0, 0, 1}, content_width);
 }
 
-char *readable_fs(double bytes, char *buf) {
+static char *readable_fs(double bytes, char *buf) {
     int i = 0;
     const char *units[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
     while (bytes > 1024) {
