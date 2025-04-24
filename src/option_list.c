@@ -62,7 +62,7 @@ void update_option_list(OptionList *op_list, float current_time) {
 
     Options *list = op_list->current;
 
-    animation_push(0.2, current_time, op_list->depth * -(float)OPTION_LIST_WIDTH, &op_list->x, OptionListTag);
+    animation_push(0.1, current_time, op_list->depth * -(float)OPTION_LIST_WIDTH, &op_list->x, OptionListTag);
 
     uint32_t height = 0;
     uint32_t end = list->items_count;

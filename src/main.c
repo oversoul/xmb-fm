@@ -307,9 +307,6 @@ int main() {
 
     init_ribbon();
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     // Register a font
     if (register_font("sans", "./fonts/SpaceMonoNerdFont.ttf") < 0) {
         fprintf(stderr, "Failed to register font\n");

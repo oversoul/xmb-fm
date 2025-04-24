@@ -847,6 +847,9 @@ void ui_create() {
 
     // Create the font atlas
     create_font_atlas();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void start_frame(float width, float height) {
