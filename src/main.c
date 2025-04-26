@@ -223,7 +223,6 @@ bool handle_file_entry_key(int key) {
 }
 
 bool handle_search_entry_key(int key) {
-
     if (key == GLFW_KEY_SLASH) {
         state.show_search = true;
         return true;
@@ -277,10 +276,14 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         return;
     }
 
-    if (handle_option_list_key(&op_list, key))
+    if (handle_search_entry_key(key))
         return;
 
-    if (handle_search_entry_key(key))
+    if (state.show_search) {
+        return;
+    }
+
+    if (handle_option_list_key(&op_list, key))
         return;
 
     if (handle_file_entry_key(key))
