@@ -177,18 +177,18 @@ bool handle_vr_list_key(int key) {
         emit_signal(EVENT_ITEM_ACTIVATED, &vr_list.selected);
         return true;
     case GLFW_KEY_UP:
-        selected = max(vr_list.selected - 1, 0);
+        selected = max(selected - 1, 0);
         break;
     case GLFW_KEY_DOWN:
-        selected = min(vr_list.selected + 1, vr_list.entry_end - 1);
+        selected = min(selected + 1, vr_list.entry_end - 1);
         break;
 
     case GLFW_KEY_PAGE_UP:
-        selected = max(vr_list.selected - 10, 0);
+        selected = max(selected - 10, 0);
         break;
 
     case GLFW_KEY_PAGE_DOWN:
-        selected = min(vr_list.selected + 10, vr_list.entry_end - 1);
+        selected = min(selected + 10, vr_list.entry_end - 1);
         break;
 
     case GLFW_KEY_HOME:
@@ -313,11 +313,9 @@ void file_manager_event_handler(EventType type, void *context, void *data) {
         struct file_entry *current = fm->current_dir->children[index];
 
         if (current->type == TYPE_DIRECTORY) {
-            // Navigate to the directory
             NavigationData nav_data = {.path = current->path, .selected_index = 0, .clear_history = false};
             emit_signal(EVENT_NAVIGATE_TO_PATH, &nav_data);
         } else {
-            // Just open the file
             open_file(current->path);
         }
     } else if (type == EVENT_NAVIGATE_BACK) {
@@ -325,10 +323,8 @@ void file_manager_event_handler(EventType type, void *context, void *data) {
         if (fm->depth <= 0)
             return;
 
-        // Navigate back and get selected index
         int selected = navigate_back(fm);
 
-        // Notify about new directory content
         DirectoryData dir_data = {
             .depth = fm->depth,
             .selected = selected,
@@ -429,6 +425,7 @@ int main() {
         glfwGetWindowSize(window, &winWidth, &winHeight);
 
         draw_background(width, height, state.theme);
+
         draw_ribbon(width, height, current_time);
 
         start_frame(width, height);
