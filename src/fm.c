@@ -245,6 +245,7 @@ void change_directory(FileManager *fm, const char *path) {
 
     fm->current_dir = create_file_entry(path);
     fm->current_dir->parent = parent;
+    fm->depth++;
     read_directory(fm->current_dir);
     sort_entries(fm);
 }
@@ -254,6 +255,7 @@ void switch_directory(FileManager *fm, const char *path) {
 
     fm->current_dir = create_file_entry(path);
     fm->current_dir->parent = NULL;
+    fm->depth = 0;
     read_directory(fm->current_dir);
     sort_entries(fm);
 }
@@ -267,6 +269,7 @@ int navigate_back(FileManager *fm) {
     fm->current_dir = fm->current_dir->parent;
     read_directory(fm->current_dir);
     sort_entries(fm);
+    fm->depth--;
 
     int index = find_index_of(fm, old->path, 0);
 

@@ -13,6 +13,31 @@ void init_vertical_list(VerticalList *vr_list) {
     vr_list->icon_spacing_vertical = 50.0;
 }
 
+void vertical_list_event_handler(EventType type, void *context, void *data) {
+    VerticalList *list = (VerticalList *)context;
+
+    if (type == EVENT_DIRECTORY_CONTENT_CHANGED) {
+        DirectoryData *dir_data = (DirectoryData *)data;
+
+        // Update list data
+        list->items = dir_data->items;
+        list->selected = dir_data->selected;
+        list->items_count = dir_data->items_count;
+
+        // Update UI
+        animation_remove_by_tag(VerticalListTag);
+        update_vertical_list(list);
+    } else if (type == EVENT_VERTICAL_SELECTION_CHANGED) {
+        SelectionData *sel_data = (SelectionData *)data;
+
+        if (sel_data->index == list->selected)
+            return;
+
+        list->selected = sel_data->index;
+        update_vertical_list(list);
+    }
+}
+
 static float item_y(const VerticalList *list, int i, size_t current) {
     float icon_spacing_vertical = list->icon_spacing_vertical;
 
@@ -52,7 +77,7 @@ static void find_visible_items(const VerticalList *list, uint32_t screen_height,
     }
 }
 
-void update_vertical_list(VerticalList *list, float current_time) {
+void update_vertical_list(VerticalList *list) {
     int threshold = 0;
     size_t selection = list->selected;
 
@@ -91,10 +116,10 @@ void update_vertical_list(VerticalList *list, float current_time) {
             node->zoom = zoom;
             node->alpha = node->label_alpha = label_alpha;
         } else {
-            animation_push(0.2, current_time, y_pos, &node->y, VerticalListTag);
-            animation_push(0.05, current_time, zoom, &node->zoom, VerticalListTag);
-            animation_push(0.2, current_time, label_alpha, &node->alpha, VerticalListTag);
-            animation_push(0.2, current_time, label_alpha, &node->label_alpha, VerticalListTag);
+            animation_push(0.2, y_pos, &node->y, VerticalListTag);
+            animation_push(0.05, zoom, &node->zoom, VerticalListTag);
+            animation_push(0.2, label_alpha, &node->alpha, VerticalListTag);
+            animation_push(0.2, label_alpha, &node->label_alpha, VerticalListTag);
 
             // printf("IY: %f\n", iy);
             // node->y = iy;

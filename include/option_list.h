@@ -1,5 +1,6 @@
 #pragma once
 
+#include "signal.h"
 #include <stddef.h>
 
 #define OPTION_LIST_WIDTH 300
@@ -31,5 +32,5 @@ typedef struct {
     void (*on_item_selected)(Option *option);
 } OptionList;
 
-void update_option_list(OptionList *list, float current_time);
-bool handle_option_list_key(OptionList *list, int key, float current_time);
+void update_option_list(OptionList *list);
+void option_list_event_handler(EventType event, OptionList *list, void *data);

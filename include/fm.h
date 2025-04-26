@@ -40,6 +40,7 @@ typedef struct file_entry {
 } FileEntry;
 
 typedef struct file_manager {
+    int depth;
     FileEntry *current_dir;
 
     // View settings

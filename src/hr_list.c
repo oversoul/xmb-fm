@@ -1,5 +1,6 @@
 #include "hr_list.h"
 #include "animation.h"
+#include "signal.h"
 #include <pwd.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -58,12 +59,40 @@ void init_horizontal_list(HorizontalList *hr_list) {
     hr_list->items_count = 8;
 }
 
-void update_horizontal_list(HorizontalList *hr_list, float current_time) {
+void horizontal_list_event_handler(EventType type, void *context, void *data) {
+    HorizontalList *list = (HorizontalList *)context;
+
+    if (type == EVENT_HORIZONTAL_SELECTION_CHANGED) {
+        SelectionData *sel_data = (SelectionData *)data;
+
+        animation_remove_by_tag(HorizontalListTag);
+        update_horizontal_list(list);
+
+        // Navigate to the selected path
+        NavigationData nav_data = {
+            .selected_index = 0,
+            .clear_history = true,
+            .path = list->items[sel_data->index].path,
+        };
+        emit_signal(EVENT_NAVIGATE_TO_PATH, &nav_data);
+    } else if (type == EVENT_DIRECTORY_CONTENT_CHANGED) {
+        DirectoryData *dir_data = (DirectoryData *)data;
+
+        // Update depth as needed
+        list->depth = dir_data->depth;
+
+        // Update UI
+        animation_remove_by_tag(HorizontalListTag);
+        update_horizontal_list(list);
+    }
+}
+
+void update_horizontal_list(HorizontalList *hr_list) {
     float offset = 150;
     float target = hr_list->selected * offset;
 
     if (hr_list->depth > 0)
         target += 50;
 
-    animation_push(0.2, current_time, target, &hr_list->scroll, HorizontalListTag);
+    animation_push(0.2, target, &hr_list->scroll, HorizontalListTag);
 }

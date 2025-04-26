@@ -1,5 +1,7 @@
 #pragma once
 
+#include "signal.h"
+
 typedef struct {
     char title[50];
     char path[50];
@@ -15,4 +17,5 @@ typedef struct {
 } HorizontalList;
 
 void init_horizontal_list(HorizontalList *hr_list);
-void update_horizontal_list(HorizontalList *hr_list, float current_time);
+void update_horizontal_list(HorizontalList *hr_list);
+void horizontal_list_event_handler(EventType type, void *context, void *data);

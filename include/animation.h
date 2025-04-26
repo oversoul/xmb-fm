@@ -31,7 +31,7 @@ struct animations {
 typedef struct tween tween_t;
 typedef struct animations animation_t;
 
-void animation_push(float duration, float start_time, float target, float *subject, AnimationTag tag);
+void animation_push(float duration, float target, float *subject, AnimationTag tag);
 void animation_update(float current_time);
 void animation_clean();
 void animation_remove_by_tag(AnimationTag tag);

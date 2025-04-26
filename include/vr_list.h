@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fm.h"
+#include "signal.h"
 
 typedef struct {
     int selected;
@@ -28,4 +29,5 @@ typedef struct {
 } VerticalList;
 
 void init_vertical_list(VerticalList *list);
-void update_vertical_list(VerticalList *list, float current_time);
+void update_vertical_list(VerticalList *list);
+void vertical_list_event_handler(EventType type, void *context, void *data);

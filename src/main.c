@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include "option_list.h"
 #include "ribbon.h"
+#include "signal.h"
 #include "ui.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +19,9 @@
 #include "hr_list.h"
 #include "draw.h"
 #include "vr_list.h"
+
+#define min(a, b) (a > b ? b : a)
+#define max(a, b) (a < b ? b : a)
 
 // Global state
 typedef struct {
@@ -80,129 +84,149 @@ void get_window_size(unsigned *width, unsigned *height) {
     }
 }
 
-void hr_list_update(float current_time) {
-    animation_remove_by_tag(HorizontalListTag);
-
-    update_horizontal_list(&hr_list, current_time);
-}
-
-void vr_list_update(float current_time) {
-    animation_remove_by_tag(VerticalListTag);
-
-    vr_list.items = fm->current_dir->children;
-    vr_list.items_count = fm->current_dir->child_count;
-    update_vertical_list(&vr_list, current_time);
-}
-
-bool handle_global_key(int key, float current_time) {
-    switch (key) {
-    case GLFW_KEY_EQUAL:
-        if (state.theme < 20)
-            state.theme++;
-        return true;
-    case GLFW_KEY_MINUS:
-        if (state.theme > 0)
-            state.theme--;
+bool handle_global_key(int key) {
+    if (key == GLFW_KEY_EQUAL) {
+        state.theme = min(state.theme + 1, 20);
         return true;
     }
+
+    if (key == GLFW_KEY_MINUS) {
+        state.theme = max(state.theme - 1, 0);
+        return true;
+    }
+
     return false;
 }
 
-bool handle_hr_list_key(int key, float current_time) {
+bool handle_hr_list_key(int key) {
     if (hr_list.depth > 0)
         return false;
 
-    bool updated = false;
-    if (key == GLFW_KEY_LEFT && hr_list.selected > 0) {
-        hr_list.selected--;
-        updated = true;
-    } else if (key == GLFW_KEY_RIGHT && hr_list.selected < hr_list.items_count - 1) {
-        hr_list.selected++;
-        updated = true;
-    }
+    if (key == GLFW_KEY_RIGHT || key == GLFW_KEY_LEFT) {
+        int selected = 0;
+        if (key == GLFW_KEY_RIGHT)
+            selected = min(hr_list.selected + 1, hr_list.items_count - 1);
+        else
+            selected = max(hr_list.selected - 1, 0);
 
-    if (updated) {
-        hr_list_update(current_time);
-        switch_directory(fm, hr_list.items[hr_list.selected].path);
-        vr_list.selected = 0;
-        vr_list_update(current_time);
+        if (selected == hr_list.selected)
+            return false;
+
+        hr_list.selected = selected;
+
+        // Emit selection change event
+        SelectionData sel_data = {.index = selected};
+        emit_signal(EVENT_HORIZONTAL_SELECTION_CHANGED, &sel_data);
+
         return true;
     }
 
     return false;
 }
 
-bool handle_vr_list_key(int key, float current_time) {
-    bool updated = false;
+bool handle_option_list_key(OptionList *list, int key) {
+    if (list->depth > 0) {
+        switch (key) {
+        case GLFW_KEY_I:
+        case GLFW_KEY_ESCAPE:
+            option_list_event_handler(OPTION_EVENT_CLOSE_MENU, list, NULL);
+            return true;
 
-    if (key == GLFW_KEY_UP && vr_list.selected > 0) {
-        vr_list.selected--;
-        updated = true;
+        case GLFW_KEY_UP: {
+            int direction = -1;
+            option_list_event_handler(OPTION_EVENT_MOVE_SELECTION, list, &direction);
+            return true;
+        }
+
+        case GLFW_KEY_DOWN: {
+            int direction = 1;
+            option_list_event_handler(OPTION_EVENT_MOVE_SELECTION, list, &direction);
+            return true;
+        }
+
+        case GLFW_KEY_ENTER: {
+            Option *current = &list->current->items[list->current->selected];
+
+            if (current->submenu && current->submenu->items_count > 0) {
+                option_list_event_handler(OPTION_EVENT_OPEN_SUBMENU, list, NULL);
+            } else {
+                option_list_event_handler(OPTION_EVENT_SELECT_ITEM, list, NULL);
+            }
+            return true;
+        }
+        }
+        return true;
     }
 
-    if (key == GLFW_KEY_DOWN && vr_list.selected < vr_list.entry_end - 1) {
-        vr_list.selected++;
-        updated = true;
-    }
-
-    if (key == GLFW_KEY_PAGE_UP && vr_list.selected > 0) {
-        vr_list.selected = (vr_list.selected > 10) ? vr_list.selected - 10 : 0;
-        updated = true;
-    }
-
-    if (key == GLFW_KEY_PAGE_DOWN && vr_list.selected < vr_list.entry_end - 1) {
-        vr_list.selected = (vr_list.selected < vr_list.entry_end - 10) ? vr_list.selected + 10 : vr_list.entry_end - 1;
-        updated = true;
-    }
-
-    if (key == GLFW_KEY_HOME) {
-        vr_list.selected = 0;
-        updated = true;
-    }
-
-    if (key == GLFW_KEY_END) {
-        vr_list.selected = vr_list.items_count - 1;
-        updated = true;
-    }
-
-    if (updated) {
-        vr_list_update(current_time);
+    if (key == GLFW_KEY_I) {
+        option_list_event_handler(OPTION_EVENT_OPEN_MENU, list, NULL);
         return true;
     }
 
     return false;
 }
 
-bool handle_file_entry_key(int key, float current_time) {
-    struct file_entry *current = fm->current_dir->children[vr_list.selected];
+bool handle_vr_list_key(int key) {
+    int selected = vr_list.selected;
 
     switch (key) {
     case GLFW_KEY_BACKSPACE:
-        if (hr_list.depth == 0)
-            return false;
-        hr_list.depth--;
-        vr_list.selected = navigate_back(fm);
-        vr_list_update(current_time);
-        hr_list_update(current_time);
+        emit_signal(EVENT_NAVIGATE_BACK, NULL);
         return true;
     case GLFW_KEY_ENTER:
-        if (current->type == TYPE_DIRECTORY) {
-            hr_list.depth++;
-            change_directory(fm, current->path);
-            vr_list.selected = 0;
-            vr_list_update(current_time);
-            hr_list_update(current_time);
-        } else if (current->type == TYPE_FILE) {
-            open_file(current->path);
+        emit_signal(EVENT_ITEM_ACTIVATED, &vr_list.selected);
+        return true;
+    case GLFW_KEY_UP:
+        selected = max(vr_list.selected - 1, 0);
+        break;
+    case GLFW_KEY_DOWN:
+        selected = min(vr_list.selected + 1, vr_list.entry_end - 1);
+        break;
+
+    case GLFW_KEY_PAGE_UP:
+        selected = max(vr_list.selected - 10, 0);
+        break;
+
+    case GLFW_KEY_PAGE_DOWN:
+        selected = min(vr_list.selected + 10, vr_list.entry_end - 1);
+        break;
+
+    case GLFW_KEY_HOME:
+        selected = 0;
+        break;
+
+    case GLFW_KEY_END:
+        selected = vr_list.items_count - 1;
+        break;
+    }
+
+    if (selected != vr_list.selected) {
+        SelectionData sel_data = {.index = selected};
+        emit_signal(EVENT_VERTICAL_SELECTION_CHANGED, &sel_data);
+        return true;
+    }
+
+    return false;
+}
+
+bool handle_file_entry_key(int key) {
+    if (state.show_preview) {
+        if (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_P) {
+            memset(state.buffer, 0, 512);
+            state.show_preview = false;
         }
         return true;
-    case GLFW_KEY_P:
+    }
+
+    if (key == GLFW_KEY_P) {
+        struct file_entry *current = fm->current_dir->children[vr_list.selected];
         if (current->type == TYPE_FILE && get_mime_type(current->path, "text/")) {
             read_file_content(current->path, state.buffer, 512);
             state.show_preview = true;
         }
         return true;
     }
+
     return false;
 }
 
@@ -218,26 +242,18 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         return;
     }
 
-    if (state.show_preview && (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_P)) {
-        memset(state.buffer, 0, 512);
-        state.show_preview = false;
+    if (handle_file_entry_key(key))
         return;
-    }
 
-    float current_time = glfwGetTime();
-
-    // Option list mode
-    if (handle_option_list_key(&op_list, key, current_time))
+    if (handle_option_list_key(&op_list, key))
         return;
 
     // Main view mode
-    if (handle_global_key(key, current_time))
+    if (handle_global_key(key))
         return;
-    if (handle_hr_list_key(key, current_time))
+    if (handle_hr_list_key(key))
         return;
-    if (handle_vr_list_key(key, current_time))
-        return;
-    if (handle_file_entry_key(key, current_time))
+    if (handle_vr_list_key(key))
         return;
 
     if (key == GLFW_KEY_ESCAPE)
@@ -261,20 +277,74 @@ void initialize_menu_data() {
     vr_list.get_screen_size = get_window_size;
 
     // options
+    root.items[5].submenu = &options;
+    options.parent = &root;
+
     op_list.on_item_selected = op_list_option_selected;
 
     op_list.root = &root;
     op_list.current = &root;
+}
 
-    options.parent = &root;
-    root.items[5].submenu = &options;
+void file_manager_event_handler(EventType type, void *context, void *data) {
+    FileManager *fm = (FileManager *)context;
+
+    if (type == EVENT_NAVIGATE_TO_PATH) {
+        NavigationData *nav_data = (NavigationData *)data;
+
+        // Change directory
+        if (nav_data->clear_history) {
+            switch_directory(fm, nav_data->path);
+        } else {
+            change_directory(fm, nav_data->path);
+        }
+
+        // Notify about new directory content
+        DirectoryData dir_data = {
+            .selected = 0,
+            .depth = fm->depth,
+            .items = fm->current_dir->children,
+            .current_path = fm->current_dir->path,
+            .items_count = fm->current_dir->child_count,
+        };
+        emit_signal(EVENT_DIRECTORY_CONTENT_CHANGED, &dir_data);
+    } else if (type == EVENT_ITEM_ACTIVATED) {
+        int index = *(int *)data;
+        struct file_entry *current = fm->current_dir->children[index];
+
+        if (current->type == TYPE_DIRECTORY) {
+            // Navigate to the directory
+            NavigationData nav_data = {.path = current->path, .selected_index = 0, .clear_history = false};
+            emit_signal(EVENT_NAVIGATE_TO_PATH, &nav_data);
+        } else {
+            // Just open the file
+            open_file(current->path);
+        }
+    } else if (type == EVENT_NAVIGATE_BACK) {
+        // Only proceed if we can go back
+        if (fm->depth <= 0)
+            return;
+
+        // Navigate back and get selected index
+        int selected = navigate_back(fm);
+
+        // Notify about new directory content
+        DirectoryData dir_data = {
+            .depth = fm->depth,
+            .selected = selected,
+            .items = fm->current_dir->children,
+            .current_path = fm->current_dir->path,
+            .items_count = fm->current_dir->child_count,
+        };
+        emit_signal(EVENT_DIRECTORY_CONTENT_CHANGED, &dir_data);
+    }
 }
 
 int main() {
     // Initialize GLFW
     if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");
-        return -1;
+        return 1;
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -287,7 +357,7 @@ int main() {
     if (!window) {
         fprintf(stderr, "Failed to create GLFW window\n");
         glfwTerminate();
-        return -1;
+        return 1;
     }
 
     glfwSetWindowAttrib(window, GLFW_FLOATING, GL_TRUE);
@@ -311,20 +381,38 @@ int main() {
     if (register_font("sans", "./fonts/SpaceMonoNerdFont.ttf") < 0) {
         fprintf(stderr, "Failed to register font\n");
         ui_delete();
-        return -1;
+        return 1;
     }
 
     if (register_font("icon", "./fonts/feather.ttf") < 0) {
         fprintf(stderr, "Failed to register font icon\n");
         ui_delete();
-        return -1;
+        return 1;
     }
 
     state.theme = 2; // electric_blue
     srand(time(NULL));
     initialize_menu_data();
 
-    vr_list_update(glfwGetTime());
+    ///////////////////////////////////////////
+
+    // Horizontal list connections
+    connect_signal(EVENT_HORIZONTAL_SELECTION_CHANGED, horizontal_list_event_handler, &hr_list);
+    connect_signal(EVENT_DIRECTORY_CONTENT_CHANGED, horizontal_list_event_handler, &hr_list);
+
+    // Vertical list connections
+    connect_signal(EVENT_DIRECTORY_CONTENT_CHANGED, vertical_list_event_handler, &vr_list);
+    connect_signal(EVENT_VERTICAL_SELECTION_CHANGED, vertical_list_event_handler, &vr_list);
+
+    // File manager connections
+    connect_signal(EVENT_NAVIGATE_TO_PATH, file_manager_event_handler, fm);
+    connect_signal(EVENT_NAVIGATE_BACK, file_manager_event_handler, fm);
+    connect_signal(EVENT_ITEM_ACTIVATED, file_manager_event_handler, fm);
+
+    ///////////////////////////////////////////
+
+    // init
+    emit_signal(EVENT_HORIZONTAL_SELECTION_CHANGED, &(SelectionData){.index = 0});
 
     while (!glfwWindowShouldClose(window)) {
         float current_time = glfwGetTime();

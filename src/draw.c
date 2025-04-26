@@ -2,7 +2,6 @@
 #include "ui.h"
 #include "hr_list.h"
 #include "vr_list.h"
-#include <GLFW/glfw3.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

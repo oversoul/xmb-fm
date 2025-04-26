@@ -1,20 +1,23 @@
 #include "animation.h"
+#include <GLFW/glfw3.h>
 #include <math.h>
 #include <stdio.h>
 
 animation_t anim_st = {0};
 
-void animation_push(float duration, float start_time, float target, float *subject, AnimationTag tag) {
+static float get_current_time() { return glfwGetTime(); }
+
+void animation_push(float duration, float target, float *subject, AnimationTag tag) {
     animation_t *p_anim = &anim_st;
 
     tween_t t = {
         .tag = tag,
+        .running_since = 0,
         .subject = subject,
         .duration = duration,
         .target_value = target,
         .initial_value = *subject,
-        .start_time = start_time,
-        .running_since = 0,
+        .start_time = get_current_time(),
     };
 
     // init animation list
