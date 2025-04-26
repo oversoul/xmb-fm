@@ -222,7 +222,7 @@ int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint)
 
     // Load glyph
     FT_UInt glyph_index = FT_Get_Char_Index(font->face, codepoint);
-    error = FT_Load_Glyph(font->face, glyph_index, FT_LOAD_DEFAULT);
+    error = FT_Load_Glyph(font->face, glyph_index, FT_LOAD_DEFAULT | FT_LOAD_RENDER);
     if (error) {
         fprintf(stderr, "Error: Could not load glyph\n");
         return -1;
@@ -230,13 +230,6 @@ int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint)
 
     if (font->face == NULL)
         return -1;
-
-    // Render glyph to bitmap
-    error = FT_Render_Glyph(font->face->glyph, FT_RENDER_MODE_NORMAL);
-    if (error) {
-        fprintf(stderr, "Error: Could not render glyph\n");
-        return -1;
-    }
 
     // Get bitmap and metrics
     FT_Bitmap bitmap = font->face->glyph->bitmap;
