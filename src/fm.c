@@ -340,24 +340,31 @@ void read_file_content(const char *filename, char *buffer, size_t len) {
     fclose(file);
 }
 
+static int stristr(const char *haystack, const char *needle) {
+    if (!haystack || !needle)
+        return 0;
+
+    for (; *haystack; haystack++) {
+        const char *h = haystack;
+        const char *n = needle;
+
+        while (*h && *n && tolower((unsigned char)*h) == tolower((unsigned char)*n)) {
+            h++;
+            n++;
+        }
+
+        if (*n == '\0') {
+            return 1; // Found
+        }
+    }
+
+    return 0; // Not found
+}
+
 int search_file_name(FileManager *fm, const char *keyword) {
     for (size_t i = 0; i < fm->current_dir->child_count; i++) {
-        struct file_entry *entry = fm->current_dir->children[i];
-        if (entry == NULL)
-            continue;
-
-        const char *name = entry->name;
-        const char *key = keyword;
-        while (*name) {
-            const char *n = name;
-            const char *k = key;
-            while (*n && *k && (tolower(*n) == tolower(*k))) {
-                n++;
-                k++;
-            }
-            if (*k == '\0') // Found a match
-                return i;
-            name++;
+        if (stristr(fm->current_dir->children[i]->name, keyword)) {
+            return i;
         }
     }
 
