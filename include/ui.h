@@ -120,4 +120,5 @@ int register_font(const char *name, const char *filename);
 void get_text_bounds(float size, const char *text, float *width, float *height, float *start_x, float *bearing_y);
 void draw_text(float size, float x, float y, const char *text, Color color);
 float draw_wrapped_text(float size, float x, float y, const char *text, Color color, float max_width);
+void draw_single_line(float font_size, float x, float y, const char *text, Color color, float max_width);
 void destroy_font_atlas();

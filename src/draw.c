@@ -17,73 +17,57 @@ void draw_selected_item_title(const HorizontalList *hr_list) {
     draw_text(16, 30, 70, hr_list->items[hr_list->selected].path, text_color);
 }
 
+void draw_horizontal_item(float x, float y, float size, const char *icon, float scale_factor) {
+    Color iconColor = {0, 0.07, 0.19, 1};
+    begin_rect(x - size / 2.0, y - size / 2.0);
+    rect_size(size, size);
+    rect_radius_all(14 * scale_factor);
+    rect_color(1, 1, 1, 1);
+    end_rect();
+
+    // icon
+    float fsize = 20 * scale_factor;
+
+    float w, h, by;
+    get_text_bounds(fsize, icon, &w, &h, NULL, &by);
+
+    float ty = y + by / 2.0;
+    float tx = x - w / 2.0;
+
+    draw_text(fsize, tx, ty, icon, iconColor);
+}
+
 void draw_horizontal_menu(const HorizontalList *hr_list, int x, int y) {
     float gap = 150.0f;
     float base_x = x - hr_list->scroll;
 
     // draw title
     draw_selected_item_title(hr_list);
-    float size = 50;
+    float size = 56;
+
+    // icon
+    use_font("icon");
 
     if (hr_list->depth > 0) {
         float scale_factor = 1.5f;
-        size *= scale_factor;
         float x = base_x + (hr_list->selected * gap);
 
-        begin_rect(x - size / 2, y - size / 2);
-        rect_size(size, size);
-        rect_radius(20, 20, 20, 20);
-        rect_color(1, 1, 1, 1);
-        end_rect();
-
-        // icon
-        use_font("icon");
-        float fsize = 20 * scale_factor;
-        Color icon_color = {0, 0, 0, 1};
-
-        float w, h, by, sx;
-        get_text_bounds(fsize, hr_list->items[hr_list->selected].icon, &w, &h, &sx, &by);
-
-        float ty = y + by / 2;
-        float tx = x - w / 2 - sx;
-        draw_text(fsize, tx, ty, hr_list->items[hr_list->selected].icon, icon_color);
+        draw_horizontal_item(x, y, size * scale_factor, hr_list->items[hr_list->selected].icon, scale_factor);
 
         return;
     }
 
-    use_font("icon");
-    Color iconColor = {0, 0.07, 0.19, 1};
     for (int i = 0; i < hr_list->items_count; i++) {
-        float size = 50;
         float x = base_x + (i * gap);
 
         // Calculate dynamic scale based on proximity to selected item
         float distance = abs(i - hr_list->selected);
         float scale_factor = 1.0f;
         if (distance == 0) {
-            scale_factor = 1.5f;
+            scale_factor = 1.5;
         }
 
-        float opacity = 1.0;
-        size *= scale_factor;
-
-        // Draw category icon
-        begin_rect(x - size / 2, y - size / 2);
-        rect_size(size, size);
-        rect_radius_all(14 * scale_factor);
-        rect_color(1, 1, 1, opacity);
-        end_rect();
-
-        // icon
-        float fsize = 20 * scale_factor;
-
-        float w, h, by, sx;
-        get_text_bounds(fsize, hr_list->items[i].icon, &w, &h, &sx, &by);
-
-        float ty = y + by / 2;
-        float tx = x - w / 2 - sx;
-
-        draw_text(fsize, tx, ty, hr_list->items[i].icon, iconColor);
+        draw_horizontal_item(x, y, size * scale_factor, hr_list->items[i].icon, scale_factor);
     }
 }
 
@@ -92,7 +76,7 @@ void draw_folder_path(const HorizontalList *hr_list, const char *path, float x, 
         return;
 
     use_font("sans");
-    draw_text(12, x, y, path, (Color){1, 1, 1, 1});
+    draw_single_line(12, x, y, path, (Color){1, 1, 1, 1}, 600);
 }
 
 void draw_vertical_list(const VerticalList *list, float start_x) {
@@ -132,7 +116,7 @@ void draw_vertical_list(const VerticalList *list, float start_x) {
         float ty = y + by / 2;
         float tx = x - sx;
 
-        draw_text(fsize, tx + 50, ty, name, text_color);
+        draw_single_line(fsize, tx + 50, ty, name, text_color, 600);
     }
 
     // selected item always in place

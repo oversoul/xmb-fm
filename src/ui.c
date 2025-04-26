@@ -448,7 +448,63 @@ void get_text_bounds(float size, const char *text, float *width, float *height, 
     free(glyphs);
 }
 
+static int render_line(FontAtlas *atlas, float x, float y, Color color, GlyphInfo *glyphs, int glyph_count,
+                       float max_width, int *glyphs_consumed, float *rendered_width) {
+    int end = 0;
+    float width = 0;
+    int last_break = -1;
+    int atlas_w = atlas->width;
+    int atlas_h = atlas->height;
+
+    while (end < glyph_count) {
+        GlyphInfo *glyph = &glyphs[end];
+
+        if (glyph->codepoint == '\n') {
+            end++; // Consume the newline but don't render it
+            break;
+        }
+
+        if (glyph->codepoint == ' ' || glyph->codepoint == '\t') {
+            last_break = end;
+        }
+
+        // Check if adding this glyph would exceed max_width
+        if (width + glyph->xadvance > max_width && max_width > 0) {
+            if (last_break > 0) {
+                end = last_break; // Break at last space
+            }
+            break;
+        }
+
+        width += glyph->xadvance;
+        end++;
+    }
+
+    // If we couldn't fit even one glyph, force at least one
+    if (end == 0 && glyph_count > 0) {
+        end = 1;
+        width = glyphs[0].xadvance;
+    }
+
+    // Render the line
+    float current_x = x;
+    for (int i = 0; i < end; i++) {
+        if (glyphs[i].codepoint == '\n' || glyphs[i].codepoint == '\t') {
+            continue;
+        }
+        draw_glyph(current_x, y, color, &glyphs[i], atlas_w, atlas_h);
+        current_x += glyphs[i].xadvance;
+    }
+
+    *glyphs_consumed = end;
+    *rendered_width = width;
+    return end;
+}
+
 float draw_wrapped_text(float size, float x, float y, const char *text, Color color, float max_width) {
+    if (!text || !text[0] || !renderState.font_atlas)
+        return 0;
+
     GlyphInfo *glyphs;
     int glyph_count;
 
@@ -463,62 +519,36 @@ float draw_wrapped_text(float size, float x, float y, const char *text, Color co
     get_string_glyphs(atlas, font_id, size, text, &glyphs, &glyph_count);
 
     // Line tracking variables
-    float line_y = y;
     float line_height = size * 1.5f; // Adjust line spacing as needed
 
     int start = 0;
+    float total_height = 0;
     while (start < glyph_count) {
-        int end = start;
-        float width = 0;
-        int last_break = -1;
+        int consumed;
+        float line_width;
 
-        // Find where this line should end
-        while (end < glyph_count) {
-            GlyphInfo *glyph = &glyphs[end];
+        render_line(atlas, x, y + total_height, color, &glyphs[start], glyph_count - start, max_width, &consumed,
+                    &line_width);
 
-            if (glyph->codepoint == '\n') {
-                end++; // Include the newline position
-                break;
-            }
-
-            if (glyph->codepoint == ' ' || glyph->codepoint == '\t') {
-                last_break = end;
-            }
-
-            // Check if adding this character exceeds width
-            if (width + glyph->xadvance > max_width) {
-                if (last_break > start) {
-                    end = last_break;
-                }
-                break;
-            }
-
-            width += glyph->xadvance;
-            end++;
-        }
-
-        // if we didn't find a breaking point and hit max width
-        if (end == start && width > max_width) {
-            end = start + 1; // least one character
-        }
-
-        // Draw the line
-        float line_x = x;
-        for (int i = start; i < end; i++) {
-            if (glyphs[i].codepoint == '\n')
-                continue;
-
-            draw_glyph(line_x, line_y, color, &glyphs[i], atlas->width, atlas->height);
-            line_x += glyphs[i].xadvance;
-        }
-
-        line_y += line_height;
-        start = end;
+        start += consumed;
+        total_height += line_height;
     }
 
     free(glyphs);
 
-    return line_y - y;
+    return total_height;
+}
+
+void draw_single_line(float font_size, float x, float y, const char *text, Color color, float max_width) {
+    GlyphInfo *glyphs;
+    int glyph_count;
+    get_string_glyphs(renderState.font_atlas, renderState.current_font, font_size, text, &glyphs, &glyph_count);
+
+    int consumed;
+    float width;
+    render_line(renderState.font_atlas, x, y, color, glyphs, glyph_count, max_width, &consumed, &width);
+
+    free(glyphs);
 }
 
 void draw_text(float size, float x, float y, const char *text, Color color) {
