@@ -4,6 +4,8 @@
 #include "option_list.h"
 #include "vr_list.h"
 
+#define SEARCH_BUFFER_LEN 30
+
 typedef struct {
     int theme;
     int width;
@@ -12,7 +14,7 @@ typedef struct {
     bool show_search;
     bool show_preview;
     char buffer[512];
-    char search_buffer[100];
+    char search_buffer[SEARCH_BUFFER_LEN];
 } DrawState;
 
 void draw_folder_path(const HorizontalList *hr_list, const char *path, float x, float y);

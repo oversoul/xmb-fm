@@ -298,5 +298,5 @@ void draw_search_field(DrawState *state) {
     get_text_bounds(16, text_field, &tw, &th, NULL, NULL);
     draw_text(16, state->width / 2.0 - tw / 2.0, y + padding, text_field, (Color){0, 0, 0, 1});
 
-    draw_text(22, x, y + h / 2, state->search_buffer, (Color){0, 0, 0, 1});
+    draw_text(20, x, y + h / 2, state->search_buffer, (Color){0, 0, 0, 1});
 }

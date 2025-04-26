@@ -231,7 +231,7 @@ bool handle_search_entry_key(int key) {
     if (state.show_search) {
         if (key == GLFW_KEY_ESCAPE) {
             state.show_search = false;
-            memset(state.search_buffer, 0, 100);
+            memset(state.search_buffer, 0, SEARCH_BUFFER_LEN);
         } else if (key == GLFW_KEY_BACKSPACE) {
             size_t len = strlen(state.search_buffer);
             if (len > 0) {
@@ -240,7 +240,7 @@ bool handle_search_entry_key(int key) {
         } else if (key == GLFW_KEY_ENTER) {
             // search current files
             emit_signal(EVENT_SEARCH, state.search_buffer);
-            memset(state.search_buffer, 0, 100);
+            memset(state.search_buffer, 0, SEARCH_BUFFER_LEN);
             state.show_search = false;
         }
         return true;
@@ -258,7 +258,7 @@ void character_callback(GLFWwindow *window, unsigned int codepoint) {
     }
 
     size_t len = strlen(state.search_buffer);
-    if (len < 99) { // leave space for null terminator
+    if (len < SEARCH_BUFFER_LEN - 1) { // leave space for null terminator
         state.search_buffer[len] = (unsigned char)codepoint;
         state.search_buffer[len + 1] = '\0';
     }

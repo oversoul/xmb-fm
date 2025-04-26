@@ -245,6 +245,16 @@ int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint)
     int width = bitmap.width;
     int height = bitmap.rows;
 
+    int effective_width = width;
+    if (slot->bitmap_left < 0) {
+        effective_width += -slot->bitmap_left; // Extend width to the left
+    }
+
+    float xadvance = (float)slot->advance.x / 64.0f;
+    if (xadvance > effective_width) {
+        effective_width = (int)ceil(xadvance);
+    }
+
     // Get the font's global metrics for this size
     float ascender = font->face->size->metrics.ascender / 64.0f;
     float descender = font->face->size->metrics.descender / 64.0f;
@@ -272,25 +282,28 @@ int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint)
     GlyphInfo *glyph = &atlas->glyphs[atlas->glyph_count];
     glyph->x = atlas->current_x;
     glyph->y = atlas->current_y;
-
-    glyph->width = width;
+    glyph->width = effective_width;
     glyph->height = final_height;
     glyph->xoff = (float)slot->bitmap_left;
-    glyph->yoff = (float)-slot->bitmap_top;           // Negative because FreeType's Y is up
-    glyph->xadvance = (float)slot->advance.x / 64.0f; // Convert from 26.6 format
+    glyph->yoff = (float)-slot->bitmap_top;
+    glyph->xadvance = xadvance;
     glyph->codepoint = codepoint;
     glyph->font_id = font_id;
     glyph->size = size;
     glyph->used = true;
 
     // Copy bitmap to atlas
-    for (int j = 0; j < height; j++) {
-        for (int i = 0; i < width; i++) {
-            atlas->pixels[(glyph->y + j) * atlas->width + (glyph->x + i)] = bitmap.buffer[j * bitmap.pitch + i];
+    for (int j = 0; j < height; ++j) {
+        for (int i = 0; i < width; ++i) {
+            int atlas_x = glyph->x + i + (slot->bitmap_left < 0 ? -slot->bitmap_left : 0);
+            int atlas_y = glyph->y + j;
+            if (atlas_x < atlas->width && atlas_y < atlas->height) { // Safety check
+                atlas->pixels[atlas_y * atlas->width + atlas_x] = bitmap.buffer[j * bitmap.pitch + i];
+            }
         }
     }
 
-    atlas->current_x += width + 1; // +1 for padding
+    atlas->current_x += effective_width + padding;
     atlas->dirty = true;
     return atlas->glyph_count++;
 }
