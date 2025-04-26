@@ -12,6 +12,7 @@ typedef enum {
     EVENT_HORIZONTAL_SELECTION_CHANGED, // Horizontal list selection changed
     EVENT_VERTICAL_SELECTION_CHANGED,   // Vertical list selection changed
     EVENT_ITEM_ACTIVATED,               // Item was activated (enter pressed)
+    EVENT_SEARCH,                       // search for next item
 
     // State update events
     EVENT_DIRECTORY_CONTENT_CHANGED, // Directory contents changed

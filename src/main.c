@@ -24,16 +24,8 @@
 #define max(a, b) (a < b ? b : a)
 
 // Global state
-typedef struct {
-    int theme;
-    int width;
-    int height;
-    bool show_info;
-    bool show_preview;
-    char buffer[512];
-} State;
 
-State state = {0};
+DrawState state = {0};
 
 FileManager *fm;
 OptionList op_list;
@@ -230,6 +222,49 @@ bool handle_file_entry_key(int key) {
     return false;
 }
 
+bool handle_search_entry_key(int key) {
+
+    if (key == GLFW_KEY_SLASH) {
+        state.show_search = true;
+        return true;
+    }
+
+    if (state.show_search) {
+        if (key == GLFW_KEY_ESCAPE) {
+            state.show_search = false;
+            memset(state.search_buffer, 0, 100);
+        } else if (key == GLFW_KEY_BACKSPACE) {
+            size_t len = strlen(state.search_buffer);
+            if (len > 0) {
+                state.search_buffer[len - 1] = '\0';
+            }
+        } else if (key == GLFW_KEY_ENTER) {
+            // search current files
+            emit_signal(EVENT_SEARCH, state.search_buffer);
+            memset(state.search_buffer, 0, 100);
+            state.show_search = false;
+        }
+        return true;
+    }
+
+    return false;
+}
+
+void character_callback(GLFWwindow *window, unsigned int codepoint) {
+    if (!state.show_search)
+        return;
+
+    if (codepoint == '/') {
+        return;
+    }
+
+    size_t len = strlen(state.search_buffer);
+    if (len < 99) { // leave space for null terminator
+        state.search_buffer[len] = (unsigned char)codepoint;
+        state.search_buffer[len + 1] = '\0';
+    }
+}
+
 void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action != GLFW_PRESS)
         return;
@@ -242,10 +277,13 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         return;
     }
 
-    if (handle_file_entry_key(key))
+    if (handle_option_list_key(&op_list, key))
         return;
 
-    if (handle_option_list_key(&op_list, key))
+    if (handle_search_entry_key(key))
+        return;
+
+    if (handle_file_entry_key(key))
         return;
 
     // Main view mode
@@ -333,6 +371,15 @@ void file_manager_event_handler(EventType type, void *context, void *data) {
             .items_count = fm->current_dir->child_count,
         };
         emit_signal(EVENT_DIRECTORY_CONTENT_CHANGED, &dir_data);
+    } else if (type == EVENT_SEARCH) {
+        char *search = (char *)data;
+
+        int index = search_file_name(fm, search);
+        if (index == -1)
+            return;
+
+        SelectionData sel_data = {.index = index};
+        emit_signal(EVENT_VERTICAL_SELECTION_CHANGED, &sel_data);
     }
 }
 
@@ -359,6 +406,7 @@ int main() {
     glfwSetWindowAttrib(window, GLFW_FLOATING, GL_TRUE);
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, handle_key);
+    glfwSetCharCallback(window, character_callback);
     glfwSetFramebufferSizeCallback(window, resize_callback);
 
     glewExperimental = GL_TRUE;
@@ -404,6 +452,7 @@ int main() {
     connect_signal(EVENT_NAVIGATE_TO_PATH, file_manager_event_handler, fm);
     connect_signal(EVENT_NAVIGATE_BACK, file_manager_event_handler, fm);
     connect_signal(EVENT_ITEM_ACTIVATED, file_manager_event_handler, fm);
+    connect_signal(EVENT_SEARCH, file_manager_event_handler, fm);
 
     ///////////////////////////////////////////
 
@@ -435,11 +484,11 @@ int main() {
             draw_vertical_list(&vr_list, 180);
             draw_horizontal_menu(&hr_list, 180, 150);
 
-            if (state.show_preview) {
-                draw_text_preview(state.buffer, state.width, state.height);
-            }
+            draw_text_preview(&state);
 
-            draw_option_list(&op_list, state.width, state.height);
+            draw_option_list(&op_list, &state);
+
+            draw_search_field(&state);
         } else {
             draw_info(&vr_list, state.width, state.height);
         }

@@ -1,4 +1,5 @@
 #include "fm.h"
+#include <ctype.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -337,4 +338,28 @@ void read_file_content(const char *filename, char *buffer, size_t len) {
     size_t bytesRead = fread(buffer, 1, len - 1, file);
     buffer[bytesRead] = '\0';
     fclose(file);
+}
+
+int search_file_name(FileManager *fm, const char *keyword) {
+    for (size_t i = 0; i < fm->current_dir->child_count; i++) {
+        struct file_entry *entry = fm->current_dir->children[i];
+        if (entry == NULL)
+            continue;
+
+        const char *name = entry->name;
+        const char *key = keyword;
+        while (*name) {
+            const char *n = name;
+            const char *k = key;
+            while (*n && *k && (tolower(*n) == tolower(*k))) {
+                n++;
+                k++;
+            }
+            if (*k == '\0') // Found a match
+                return i;
+            name++;
+        }
+    }
+
+    return -1;
 }

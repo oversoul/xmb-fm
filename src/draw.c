@@ -146,30 +146,33 @@ void draw_vertical_list(const VerticalList *list, float start_x) {
     end_rect();
 }
 
-void draw_text_preview(const char *text, float width, float height) {
+void draw_text_preview(DrawState *state) {
+    if (!state->show_preview)
+        return;
+
     begin_rect(0, 0);
-    rect_size(width, height);
+    rect_size(state->width, state->height);
     rect_color(0, 0, 0, .8);
     end_rect();
 
-    float x = width / 10;
-    float y = height / 10;
+    float x = state->width / 10.0;
+    float y = state->height / 10.0;
 
     begin_rect(x, y);
-    rect_size(width - 2 * x, height - 2 * y);
+    rect_size(state->width - 2 * x, state->height - 2 * y);
     rect_radius(20, 20, 20, 20);
     rect_color(1, 1, 1, 1);
     end_rect();
 
     float padding = 20;
-    float content_width = width - 2 * x;
+    float content_width = state->width - 2 * x;
 
     x += padding;
     y += padding;
     content_width -= padding * 2;
 
     use_font("sans");
-    draw_wrapped_text(16, x, y + 10, text, (Color){0, 0, 0, 1}, content_width);
+    draw_wrapped_text(16, x, y + 10, state->buffer, (Color){0, 0, 0, 1}, content_width);
 }
 
 static char *readable_fs(double bytes, char *buf) {
@@ -237,12 +240,12 @@ void draw_option_list_depth(float x, float y, Options *list) {
     }
 }
 
-void draw_option_list(OptionList *op_list, float width, float height) {
+void draw_option_list(OptionList *op_list, DrawState *state) {
     float rect_w = OPTION_LIST_WIDTH;
-    float x = width + op_list->x;
+    float x = state->width + op_list->x;
 
     begin_rect(x, 0);
-    rect_size(x + width, height);
+    rect_size(x + state->width, state->height);
     rect_gradient_sides((Color){0, 0, 0, .8}, (Color){0, 0, 0, .3});
     end_rect();
 
@@ -258,8 +261,42 @@ void draw_option_list(OptionList *op_list, float width, float height) {
 
     for (int i = depth - 1; i >= 0; i--) {
         float total_height = 40. * menus[i]->items_count;
-        float start_y = height / 2 - total_height / 2;
+        float start_y = state->height / 2.0 - total_height / 2.0;
 
         draw_option_list_depth(x + (depth - 1 - i) * rect_w, start_y, menus[i]);
     }
+}
+
+void draw_search_field(DrawState *state) {
+    if (!state->show_search)
+        return;
+
+    begin_rect(0, 0);
+    rect_size(state->width, state->height);
+    rect_color(0, 0, 0, .3);
+    end_rect();
+
+    float w = 400;
+    float h = 200;
+
+    float x = state->width / 2.0 - w / 2.0;
+    float y = state->height / 2.0 - h / 2.0;
+    begin_rect(x, y);
+    rect_size(w, h);
+    rect_radius(20, 20, 20, 20);
+    rect_color(1, 1, 1, 1);
+    end_rect();
+
+    float padding = 20;
+
+    x += padding;
+    y += padding;
+
+    use_font("sans");
+    const char *text_field = "Search";
+    float tw, th;
+    get_text_bounds(16, text_field, &tw, &th, NULL, NULL);
+    draw_text(16, state->width / 2.0 - tw / 2.0, y + padding, text_field, (Color){0, 0, 0, 1});
+
+    draw_text(22, x, y + h / 2, state->search_buffer, (Color){0, 0, 0, 1});
 }
