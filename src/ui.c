@@ -489,7 +489,7 @@ static int render_line(FontAtlas *atlas, float x, float y, Color color, GlyphInf
     // Render the line
     float current_x = x;
     for (int i = 0; i < end; i++) {
-        if (glyphs[i].codepoint == '\n' || glyphs[i].codepoint == '\t') {
+        if (glyphs[i].codepoint == ' ' || glyphs[i].codepoint == '\n' || glyphs[i].codepoint == '\t') {
             continue;
         }
         draw_glyph(current_x, y, color, &glyphs[i], atlas_w, atlas_h);
