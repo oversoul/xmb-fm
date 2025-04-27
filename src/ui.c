@@ -573,15 +573,19 @@ void draw_text(float size, float x, float y, const char *text, Color color) {
     float cursor_x = x;
     float cursor_y = y;
 
+    FontInfo *font = &atlas->fonts[font_id];
     for (int i = 0; i < glyph_count; i++) {
         GlyphInfo *glyph = &glyphs[i];
+        if (glyph->codepoint == ' ') {
+            cursor_x += glyph->xadvance;
+            continue;
+        }
 
         draw_glyph(cursor_x, cursor_y, color, glyph, atlas->width, atlas->height);
 
         cursor_x += glyph->xadvance;
 
         if (i < glyph_count - 1) {
-            FontInfo *font = &atlas->fonts[font_id];
             FT_Vector kerning;
             FT_UInt current = FT_Get_Char_Index(font->face, glyph->codepoint);
             FT_UInt next = FT_Get_Char_Index(font->face, glyphs[i + 1].codepoint);
