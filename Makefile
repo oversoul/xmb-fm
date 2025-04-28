@@ -1,6 +1,7 @@
-CFLAGS=-Wall -std=c23 -pedantic -g -fcolor-diagnostics #-fsanitize=address
-LDFLAGS = -lm -lGL -lglfw `pkg-config --libs freetype2 glew libmagic`
-INCS=-I include/ `pkg-config --cflags freetype2 glew libmagic`
+PCKGS = gl freetype2 glew libmagic harfbuzz
+CFLAGS=-Wall -std=c23 -pedantic -g -fcolor-diagnostics# -fsanitize=address
+LDFLAGS = -lm -lGL -lglfw `pkg-config --libs $(PCKGS)`
+INCS=-I include/ `pkg-config --cflags $(PCKGS)`
 
 COMPILER = clang
 

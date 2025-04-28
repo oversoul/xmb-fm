@@ -8,6 +8,9 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#include <hb.h>
+#include <hb-ft.h>
+
 #define GLSL(src) "#version 430\n" #src
 
 typedef struct {
@@ -59,6 +62,8 @@ typedef struct {
     char name[64];
     float sizes[MAX_FONT_SIZES];
     int size_count;
+    hb_font_t *hb_font;
+    hb_buffer_t *hb_buffer;
 } FontInfo;
 
 typedef struct {

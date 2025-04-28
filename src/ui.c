@@ -131,24 +131,22 @@ int register_font(const char *name, const char *filename) {
         return -1;
     }
 
+    font->hb_font = hb_ft_font_create(font->face, NULL);
+    font->hb_buffer = hb_buffer_create();
+    hb_ft_font_set_funcs(font->hb_font);
+
     // Store font information
-    strncpy(font->name, filename, 63);
-    font->name[63] = '\0';
+    snprintf(font->name, sizeof(font->name), "%s", filename);
     font->size_count = 0;
 
-    size_t len = strlen(name);
-    if (len > 59) {
-        len = 59;
+    if (strlen(name) > 59) {
         printf("INFO: use a shorter name for font.\n");
     }
-
-    strncpy(atlas->font_names[atlas->font_count], name, len);
-    atlas->font_names[atlas->font_count][len] = '\0';
+    snprintf(atlas->font_names[atlas->font_count], 60, "%s", name);
 
     return atlas->font_count++; // Return font ID and increment count
 }
 
-// Find glyph in atlas or return -1 if not found
 int find_glyph(int font_id, float size, int codepoint) {
     FontAtlas *atlas = renderState.font_atlas;
     if (!atlas) {
@@ -221,8 +219,33 @@ int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint)
     }
 
     // Load glyph
-    FT_UInt glyph_index = FT_Get_Char_Index(font->face, codepoint);
-    error = FT_Load_Glyph(font->face, glyph_index, FT_LOAD_DEFAULT | FT_LOAD_RENDER);
+    // FT_UInt glyph_index = FT_Get_Char_Index(font->face, codepoint);
+    // if (glyph_index == 0) {
+    //     const int fallback_codepoints[] = {'?'};
+    //     int len = sizeof(fallback_codepoints) / sizeof(int);
+    //
+    //     for (int i = 0; i < len && glyph_index == 0; i++) {
+    //         int fallback_codepoint = fallback_codepoints[i]; // Use a question mark as fallback
+    //         // First check if we already have the fallback glyph
+    //         int fallback_glyph = find_glyph(font_id, size, fallback_codepoint);
+    //         if (fallback_glyph >= 0) {
+    //             return fallback_glyph;
+    //         }
+    //
+    //         // Otherwise, load the fallback glyph
+    //         glyph_index = FT_Get_Char_Index(font->face, fallback_codepoint);
+    //         if (glyph_index == 0) {
+    //             // If even the fallback is missing, use a simple box or space
+    //             fprintf(stderr, "Warning: Even fallback glyph missing for codepoint %d\n", codepoint);
+    //         } else {
+    //             // Remember the original codepoint, but use fallback glyph data
+    //             codepoint = fallback_codepoint;
+    //             break;
+    //         }
+    //     }
+    // }
+
+    error = FT_Load_Glyph(font->face, codepoint, FT_LOAD_DEFAULT | FT_LOAD_RENDER);
     if (error) {
         fprintf(stderr, "Error: Could not load glyph\n");
         return -1;
@@ -370,32 +393,80 @@ void get_string_glyphs(FontAtlas *atlas, int font_id, float size, const char *te
     if (!text || !glyphs || !count)
         return;
 
-    // Count UTF-8 characters
-    *count = 0;
-    const char *p = text;
-    while (*p) {
-        decode_utf8(&p);
-        (*count)++;
-    }
+    // // Count UTF-8 characters
+    // *count = 0;
+    // const char *p = text;
+    // while (*p) {
+    //     decode_utf8(&p);
+    //     (*count)++;
+    // }
+    //
+    // // Allocate glyph array
+    // *glyphs = (GlyphInfo *)malloc(*count * sizeof(GlyphInfo));
+    //
+    // // Process each character
+    // p = text;
+    // int idx = 0;
+    //
+    // while (*p) {
+    //     int codepoint = decode_utf8(&p);
+    //
+    //     // Get or add glyph
+    //     int glyph_idx = add_glyph_to_atlas(atlas, font_id, size, codepoint);
+    //     if (glyph_idx >= 0) {
+    //         (*glyphs)[idx++] = atlas->glyphs[glyph_idx];
+    //     }
+    // }
+    //
+    // *count = idx;
+    // update_atlas_texture(atlas);
 
-    // Allocate glyph array
-    *glyphs = (GlyphInfo *)malloc(*count * sizeof(GlyphInfo));
+    FontInfo *font = &atlas->fonts[font_id];
 
-    // Process each character
-    p = text;
-    int idx = 0;
+    // Shape text with HarfBuzz
+    hb_buffer_reset(font->hb_buffer);
+    hb_buffer_add_utf8(font->hb_buffer, text, -1, 0, -1);
+    hb_buffer_guess_segment_properties(font->hb_buffer);
 
-    while (*p) {
-        int codepoint = decode_utf8(&p);
+    // Temporary scale adjustment
+    hb_font_set_scale(font->hb_font, (int)(size * 64), (int)(size * 64));
 
-        // Get or add glyph
-        int glyph_idx = add_glyph_to_atlas(atlas, font_id, size, codepoint);
-        if (glyph_idx >= 0) {
-            (*glyphs)[idx++] = atlas->glyphs[glyph_idx];
+    hb_feature_t features[] = {
+        {HB_TAG('c', 'c', 'm', 'p'), 1, 0, -1},
+        {HB_TAG('l', 'o', 'c', 'l'), 1, 0, -1},
+    };
+
+    hb_shape(font->hb_font, font->hb_buffer, features, 2);
+
+    // Get shaping results
+    unsigned int hb_count;
+    hb_glyph_info_t *info = hb_buffer_get_glyph_infos(font->hb_buffer, &hb_count);
+    // hb_glyph_position_t *pos = hb_buffer_get_glyph_positions(font->hb_buffer, NULL);
+
+    *glyphs = malloc(hb_count * sizeof(GlyphInfo));
+
+    for (unsigned i = 0; i < hb_count; i++) {
+        hb_codepoint_t gid = info[i].codepoint;
+
+        // Find or add glyph to atlas
+        int atlas_idx = find_glyph(font_id, size, gid);
+        if (atlas_idx < 0) {
+            atlas_idx = add_glyph_to_atlas(atlas, font_id, size, gid);
         }
-    }
 
-    *count = idx;
+        if (atlas_idx >= 0) {
+            (*glyphs)[i] = atlas->glyphs[atlas_idx];
+        }
+
+        // Store HarfBuzz positioning
+        // (*positions)[i] = (GlyphPosition){
+        //     .x_offset = pos[i].x_offset / 64.0f,
+        //     .y_offset = pos[i].y_offset / 64.0f,
+        //     .x_advance = pos[i].x_advance / 64.0f,
+        //     .y_advance = pos[i].y_advance / 64.0f,
+        // };
+    }
+    *count = hb_count;
     update_atlas_texture(atlas);
 }
 
@@ -566,10 +637,6 @@ void draw_text(float size, float x, float y, const char *text, Color color) {
 
     get_string_glyphs(atlas, font_id, size, text, &glyphs, &glyph_count);
 
-    // Enable texture
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, atlas->texture_id);
-
     float cursor_x = x;
     float cursor_y = y;
 
@@ -610,6 +677,8 @@ void destroy_font_atlas() {
 
     for (int i = 0; i < atlas->font_count; i++) {
         FT_Done_Face(atlas->fonts[i].face);
+        hb_buffer_destroy(atlas->fonts[i].hb_buffer);
+        hb_font_destroy(atlas->fonts[i].hb_font);
     }
 
     FT_Done_FreeType(atlas->ft_library);
