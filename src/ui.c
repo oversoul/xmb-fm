@@ -508,9 +508,10 @@ void get_text_bounds(float size, const char *text, float *width, float *height, 
         min_x = min_y = max_x = max_y = 0;
     }
 
-    *width = max_x - min_x;
-    *height = max_y - min_y;
-
+    if (width)
+        *width = max_x - min_x;
+    if (height)
+        *height = max_y - min_y;
     if (start_x)
         *start_x = min_x;
     if (bearing_y)

@@ -47,6 +47,8 @@ typedef struct file_manager {
     bool show_hidden;
     bool reverse_sort;
     SortMode sort_mode;
+
+    int action_target_index;
 } FileManager;
 
 FileManager *create_file_manager(const char *path);
@@ -60,3 +62,4 @@ bool get_mime_type(const char *path, const char *test);
 void open_file(const char *path);
 void read_file_content(const char *filename, char *buffer, size_t len);
 int search_file_name(FileManager *fm, const char *keyword);
+bool fm_rename(FileManager *fm, const char *new_name);

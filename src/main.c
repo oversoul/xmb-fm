@@ -1,12 +1,5 @@
-#include "animation.h"
-#include "fm.h"
-
 #include <GL/glew.h>
-#include "input.h"
-#include "option_list.h"
-#include "ribbon.h"
-#include "signal.h"
-#include "ui.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,10 +9,18 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
+#define GL_GLEXT_PROTOTYPES
 #include <GLFW/glfw3.h>
 
-#include "hr_list.h"
+#include "animation.h"
+#include "fm.h"
+#include "input.h"
+#include "option_list.h"
+#include "ribbon.h"
+#include "signal.h"
+#include "ui.h"
 #include "draw.h"
+#include "hr_list.h"
 #include "vr_list.h"
 
 #define min(a, b) (a > b ? b : a)
@@ -31,6 +32,7 @@ DrawState state = {0};
 
 FileManager *fm;
 Input search_input;
+Input rename_input;
 OptionList op_list;
 VerticalList vr_list;
 HorizontalList hr_list;
@@ -244,18 +246,35 @@ bool handle_search_entry_key(int key) {
         return true;
     }
 
+    if (rename_input.is_visible) {
+        if (key == GLFW_KEY_ESCAPE) {
+            hide_input(&rename_input);
+        } else if (key == GLFW_KEY_BACKSPACE) {
+            pop_from_input(&rename_input);
+        } else if (key == GLFW_KEY_ENTER) {
+            emit_signal(EVENT_RENAME, rename_input.buffer);
+            hide_input(&rename_input);
+        } else if (key == GLFW_KEY_LEFT) {
+            move_cursor_left(&rename_input);
+        } else if (key == GLFW_KEY_RIGHT) {
+            move_cursor_right(&rename_input);
+        }
+        return true;
+    }
+
     return false;
 }
 
 void character_callback(GLFWwindow *window, unsigned int codepoint) {
-    if (!search_input.is_visible)
-        return;
-
-    if (codepoint == '/') {
-        return;
+    if (search_input.is_visible) {
+        if (codepoint == '/')
+            return;
+        append_to_input(&search_input, codepoint);
+    } else if (rename_input.is_visible) {
+        if (codepoint == '/')
+            return;
+        append_to_input(&rename_input, codepoint);
     }
-
-    append_to_input(&search_input, codepoint);
 }
 
 void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -273,7 +292,7 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
     if (handle_search_entry_key(key))
         return;
 
-    if (search_input.is_visible) {
+    if (search_input.is_visible || rename_input.is_visible) {
         return;
     }
 
@@ -298,6 +317,10 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
 void op_list_option_selected(Option *option) {
     if (strcmp(option->title, "Information") == 0) {
         state.show_info = true;
+    } else if (strcmp(option->title, "Rename") == 0) {
+        fm->action_target_index = vr_list.selected; // Store target index
+        set_buffer_input(&rename_input, fm->current_dir->children[vr_list.selected]->name);
+        show_input(&rename_input);
     }
 }
 
@@ -377,6 +400,23 @@ void file_manager_event_handler(EventType type, void *context, void *data) {
 
         SelectionData sel_data = {.index = index};
         emit_signal(EVENT_VERTICAL_SELECTION_CHANGED, &sel_data);
+    } else if (type == EVENT_RENAME) {
+        char *new_name = (char *)data;
+
+        if (!fm_rename(fm, new_name)) {
+            printf("Couldn't rename file.\n");
+            return;
+        }
+
+        DirectoryData dir_data = {
+            .depth = fm->depth,
+            .items = fm->current_dir->children,
+            .selected = fm->action_target_index,
+            .current_path = fm->current_dir->path,
+            .items_count = fm->current_dir->child_count,
+        };
+        emit_signal(EVENT_DIRECTORY_CONTENT_CHANGED, &dir_data);
+        fm->action_target_index = -1;
     }
 }
 
@@ -450,6 +490,7 @@ int main() {
     connect_signal(EVENT_NAVIGATE_BACK, file_manager_event_handler, fm);
     connect_signal(EVENT_ITEM_ACTIVATED, file_manager_event_handler, fm);
     connect_signal(EVENT_SEARCH, file_manager_event_handler, fm);
+    connect_signal(EVENT_RENAME, file_manager_event_handler, fm);
 
     ///////////////////////////////////////////
 
@@ -485,7 +526,8 @@ int main() {
 
             draw_option_list(&op_list, &state);
 
-            draw_input_field(&search_input, &state);
+            draw_input_field(&search_input, "Search", &state);
+            draw_input_field(&rename_input, "Rename", &state);
         } else {
             draw_info(&vr_list, state.width, state.height);
         }

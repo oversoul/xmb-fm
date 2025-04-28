@@ -91,6 +91,24 @@ static void sort_entries(FileManager *fm) {
     }
 }
 
+static void load_entry_info(const char *path, FileEntry *entry) {
+
+    struct stat st;
+    if (stat(path, &st) == 0) {
+        entry->size = st.st_size;
+        entry->permissions = st.st_mode;
+        entry->access_time = st.st_atime;
+        entry->modified_time = st.st_mtime;
+
+        if (S_ISDIR(st.st_mode))
+            entry->type = TYPE_DIRECTORY;
+        else if (S_ISLNK(st.st_mode))
+            entry->type = TYPE_SYMLINK;
+        else
+            entry->type = TYPE_FILE;
+    }
+}
+
 static FileEntry *create_file_entry(const char *path) {
     FileEntry *entry = (FileEntry *)malloc(sizeof(FileEntry));
     if (!entry)
@@ -108,21 +126,7 @@ static FileEntry *create_file_entry(const char *path) {
 
     strncpy(entry->path, path, sizeof(entry->path) - 1);
 
-    // Get file info
-    struct stat st;
-    if (stat(path, &st) == 0) {
-        entry->size = st.st_size;
-        entry->permissions = st.st_mode;
-        entry->access_time = st.st_atime;
-        entry->modified_time = st.st_mtime;
-
-        if (S_ISDIR(st.st_mode))
-            entry->type = TYPE_DIRECTORY;
-        else if (S_ISLNK(st.st_mode))
-            entry->type = TYPE_SYMLINK;
-        else
-            entry->type = TYPE_FILE;
-    }
+    load_entry_info(path, entry);
 
     entry->children = NULL;
     entry->child_count = 0;
@@ -232,6 +236,7 @@ FileManager *create_file_manager(const char *path) {
     fm->sort_mode = SortByName;
     fm->show_hidden = false; // unimplemented
     fm->reverse_sort = false;
+    fm->action_target_index = -1;
 
     fm->current_dir = create_file_entry(path);
     fm->current_dir->parent = NULL;
@@ -369,4 +374,29 @@ int search_file_name(FileManager *fm, const char *keyword) {
     }
 
     return -1;
+}
+
+bool fm_rename(FileManager *fm, const char *new_name) {
+    if (fm->action_target_index == -1) {
+        fprintf(stderr, "No target index\n");
+        return false;
+    }
+
+    struct file_entry *current = fm->current_dir->children[fm->action_target_index];
+
+    char target[1024];
+    snprintf(target, sizeof(target), "%s/%s", current->parent->path, new_name);
+
+    if (strcmp(current->path, target) == 0) {
+        fprintf(stderr, "Can't rename file with same name.\n");
+        return false;
+    }
+
+    if (rename(current->path, target) == 0) {
+        strcpy(current->path, target);
+        strcpy(current->name, new_name);
+        load_entry_info(target, current);
+        return true;
+    }
+    return false;
 }

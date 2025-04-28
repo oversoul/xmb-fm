@@ -252,7 +252,7 @@ void draw_option_list(OptionList *op_list, DrawState *state) {
     }
 }
 
-void draw_input_field(Input *input, DrawState *state) {
+void draw_input_field(Input *input, const char *title, DrawState *state) {
     if (!input->is_visible)
         return;
 
@@ -278,10 +278,25 @@ void draw_input_field(Input *input, DrawState *state) {
     y += padding;
 
     use_font("sans");
-    const char *text_field = "Search";
     float tw, th;
-    get_text_bounds(16, text_field, &tw, &th, NULL, NULL);
-    draw_text(16, state->width / 2.0 - tw / 2.0, y + padding, text_field, (Color){0, 0, 0, 1});
+    get_text_bounds(16, title, &tw, &th, NULL, NULL);
+    draw_text(16, state->width / 2.0 - tw / 2.0, y + padding, title, (Color){0, 0, 0, 1});
+
+    // draw cursor
+    float twc = 0, thc = 30;
+
+    if (strlen(input->buffer) > 0) {
+        char temp[INPUT_BUFFER_LEN];
+        strncpy(temp, input->buffer, input->position);
+        temp[input->position] = '\0';
+
+        get_text_bounds(20, temp, &twc, NULL, NULL, NULL);
+    }
+
+    begin_rect(x + twc, y - padding + h / 2);
+    rect_size(1, thc);
+    rect_color(1, 0, 0, 1);
+    end_rect();
 
     draw_text(20, x, y + h / 2, input->buffer, (Color){0, 0, 0, 1});
 }
