@@ -1,4 +1,5 @@
 #include "draw.h"
+#include "input.h"
 #include "ui.h"
 #include "hr_list.h"
 #include "vr_list.h"
@@ -251,8 +252,8 @@ void draw_option_list(OptionList *op_list, DrawState *state) {
     }
 }
 
-void draw_search_field(DrawState *state) {
-    if (!state->show_search)
+void draw_input_field(Input *input, DrawState *state) {
+    if (!input->is_visible)
         return;
 
     begin_rect(0, 0);
@@ -282,5 +283,5 @@ void draw_search_field(DrawState *state) {
     get_text_bounds(16, text_field, &tw, &th, NULL, NULL);
     draw_text(16, state->width / 2.0 - tw / 2.0, y + padding, text_field, (Color){0, 0, 0, 1});
 
-    draw_text(20, x, y + h / 2, state->search_buffer, (Color){0, 0, 0, 1});
+    draw_text(20, x, y + h / 2, input->buffer, (Color){0, 0, 0, 1});
 }

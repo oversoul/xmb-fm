@@ -1,6 +1,8 @@
 #include "animation.h"
 #include "fm.h"
+
 #include <GL/glew.h>
+#include "input.h"
 #include "option_list.h"
 #include "ribbon.h"
 #include "signal.h"
@@ -28,6 +30,7 @@
 DrawState state = {0};
 
 FileManager *fm;
+Input search_input;
 OptionList op_list;
 VerticalList vr_list;
 HorizontalList hr_list;
@@ -224,24 +227,19 @@ bool handle_file_entry_key(int key) {
 
 bool handle_search_entry_key(int key) {
     if (key == GLFW_KEY_SLASH) {
-        state.show_search = true;
+        show_input(&search_input);
         return true;
     }
 
-    if (state.show_search) {
+    if (search_input.is_visible) {
         if (key == GLFW_KEY_ESCAPE) {
-            state.show_search = false;
-            memset(state.search_buffer, 0, SEARCH_BUFFER_LEN);
+            hide_input(&search_input);
         } else if (key == GLFW_KEY_BACKSPACE) {
-            size_t len = strlen(state.search_buffer);
-            if (len > 0) {
-                state.search_buffer[len - 1] = '\0';
-            }
+            pop_from_input(&search_input);
         } else if (key == GLFW_KEY_ENTER) {
             // search current files
-            emit_signal(EVENT_SEARCH, state.search_buffer);
-            memset(state.search_buffer, 0, SEARCH_BUFFER_LEN);
-            state.show_search = false;
+            emit_signal(EVENT_SEARCH, search_input.buffer);
+            hide_input(&search_input);
         }
         return true;
     }
@@ -250,18 +248,14 @@ bool handle_search_entry_key(int key) {
 }
 
 void character_callback(GLFWwindow *window, unsigned int codepoint) {
-    if (!state.show_search)
+    if (!search_input.is_visible)
         return;
 
     if (codepoint == '/') {
         return;
     }
 
-    size_t len = strlen(state.search_buffer);
-    if (len < SEARCH_BUFFER_LEN - 1) { // leave space for null terminator
-        state.search_buffer[len] = (unsigned char)codepoint;
-        state.search_buffer[len + 1] = '\0';
-    }
+    append_to_input(&search_input, codepoint);
 }
 
 void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -279,7 +273,7 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
     if (handle_search_entry_key(key))
         return;
 
-    if (state.show_search) {
+    if (search_input.is_visible) {
         return;
     }
 
@@ -491,7 +485,7 @@ int main() {
 
             draw_option_list(&op_list, &state);
 
-            draw_search_field(&state);
+            draw_input_field(&search_input, &state);
         } else {
             draw_info(&vr_list, state.width, state.height);
         }
