@@ -227,38 +227,35 @@ bool handle_file_entry_key(int key) {
     return false;
 }
 
-bool handle_search_entry_key(int key) {
+void handle_input_key(Input *input, EventType eventType, int key) {
+    if (key == GLFW_KEY_ESCAPE) {
+        hide_input(input);
+    } else if (key == GLFW_KEY_BACKSPACE) {
+        pop_from_input(input);
+    } else if (key == GLFW_KEY_ENTER) {
+        // search current files
+        emit_signal(eventType, input->buffer);
+        hide_input(input);
+    } else if (key == GLFW_KEY_LEFT) {
+        move_cursor_left(input);
+    } else if (key == GLFW_KEY_RIGHT) {
+        move_cursor_right(input);
+    }
+}
+
+bool handle_input_entry_key(int key) {
     if (key == GLFW_KEY_SLASH) {
         show_input(&search_input);
         return true;
     }
 
     if (search_input.is_visible) {
-        if (key == GLFW_KEY_ESCAPE) {
-            hide_input(&search_input);
-        } else if (key == GLFW_KEY_BACKSPACE) {
-            pop_from_input(&search_input);
-        } else if (key == GLFW_KEY_ENTER) {
-            // search current files
-            emit_signal(EVENT_SEARCH, search_input.buffer);
-            hide_input(&search_input);
-        }
+        handle_input_key(&search_input, EVENT_SEARCH, key);
         return true;
     }
 
     if (rename_input.is_visible) {
-        if (key == GLFW_KEY_ESCAPE) {
-            hide_input(&rename_input);
-        } else if (key == GLFW_KEY_BACKSPACE) {
-            pop_from_input(&rename_input);
-        } else if (key == GLFW_KEY_ENTER) {
-            emit_signal(EVENT_RENAME, rename_input.buffer);
-            hide_input(&rename_input);
-        } else if (key == GLFW_KEY_LEFT) {
-            move_cursor_left(&rename_input);
-        } else if (key == GLFW_KEY_RIGHT) {
-            move_cursor_right(&rename_input);
-        }
+        handle_input_key(&rename_input, EVENT_RENAME, key);
         return true;
     }
 
@@ -289,7 +286,7 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         return;
     }
 
-    if (handle_search_entry_key(key))
+    if (handle_input_entry_key(key))
         return;
 
     if (search_input.is_visible || rename_input.is_visible) {
