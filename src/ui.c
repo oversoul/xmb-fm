@@ -179,7 +179,7 @@ bool add_new_line(FontAtlas *atlas) {
     return true;
 }
 
-int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint) {
+int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint, int ft_point) {
     // Check if font_id is valid
     if (font_id < 0 || font_id >= atlas->font_count) {
         fprintf(stderr, "Error: Invalid font ID: %d\n", font_id);
@@ -304,6 +304,7 @@ int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint)
     glyph->yoff = (float)-slot->bitmap_top;
     glyph->xadvance = xadvance;
     glyph->codepoint = codepoint;
+    glyph->ft_codepoint = ft_point;
     glyph->font_id = font_id;
     glyph->size = size;
     glyph->used = true;
@@ -451,7 +452,7 @@ void get_string_glyphs(FontAtlas *atlas, int font_id, float size, const char *te
         // Find or add glyph to atlas
         int atlas_idx = find_glyph(font_id, size, gid);
         if (atlas_idx < 0) {
-            atlas_idx = add_glyph_to_atlas(atlas, font_id, size, gid);
+            atlas_idx = add_glyph_to_atlas(atlas, font_id, size, gid, text[i]);
         }
 
         if (atlas_idx >= 0) {
@@ -530,13 +531,14 @@ static int render_line(FontAtlas *atlas, float x, float y, Color color, GlyphInf
 
     while (end < glyph_count) {
         GlyphInfo *glyph = &glyphs[end];
+        // printf("codepoint: %d\n", glyph->codepoint == '\n');
 
-        if (glyph->codepoint == '\n') {
+        if (glyph->ft_codepoint == '\n') {
             end++; // Consume the newline but don't render it
             break;
         }
 
-        if (glyph->codepoint == ' ' || glyph->codepoint == '\t') {
+        if (glyph->ft_codepoint == ' ' || glyph->ft_codepoint == '\t') {
             last_break = end;
         }
 
@@ -561,7 +563,7 @@ static int render_line(FontAtlas *atlas, float x, float y, Color color, GlyphInf
     // Render the line
     float current_x = x;
     for (int i = 0; i < end; i++) {
-        if (glyphs[i].codepoint == ' ' || glyphs[i].codepoint == '\n' || glyphs[i].codepoint == '\t') {
+        if (glyphs[i].ft_codepoint == '\n' || glyphs[i].ft_codepoint == '\t') {
             continue;
         }
         draw_glyph(current_x, y, color, &glyphs[i], atlas_w, atlas_h);

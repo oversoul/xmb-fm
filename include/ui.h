@@ -51,7 +51,8 @@ typedef struct {
     int width, height; // Glyph dimensions
     float xoff, yoff;  // Offset for positioning
     float xadvance;    // Horizontal advance
-    int codepoint;     // Unicode codepoint
+    int codepoint;     // harfbuzz Unicode codepoint
+    int ft_codepoint;  // Unicode codepoint
     int font_id;       // Font identifier
     float size;        // Font size
     bool used;         // Is this slot used?
