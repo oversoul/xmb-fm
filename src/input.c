@@ -29,17 +29,58 @@ void move_cursor_right(Input *input) {
 }
 
 void pop_from_input(Input *input) {
+    if (input->position <= 0)
+        return;
+
     size_t len = strlen(input->buffer);
-    if (len > 0 && input->position > 0) {
-        // Shift characters after cursor one position left
-        for (int i = input->position - 1; i < len; i++) {
-            input->buffer[i] = input->buffer[i + 1];
-        }
-        input->position--;
+    if (len == 0)
+        return;
+
+    int char_start = input->position - 1;
+    while (char_start > 0 && (input->buffer[char_start] & 0xC0) == 0x80) {
+        char_start--;
     }
+
+    int char_length = input->position - char_start;
+
+    for (int i = char_start; i <= len - char_length; i++) {
+        input->buffer[i] = input->buffer[i + char_length];
+    }
+
+    input->position = char_start;
 }
 
 void append_to_input(Input *input, unsigned int codepoint) {
+    char utf8_char[5] = {0};
+    int utf8_len = 0;
+
+    if (codepoint < 0x80) {
+        // ASCII
+        utf8_char[0] = (char)codepoint;
+        utf8_len = 1;
+    } else if (codepoint < 0x800) {
+        // 2-byte UTF-8
+        utf8_char[0] = 0xC0 | (codepoint >> 6);
+        utf8_char[1] = 0x80 | (codepoint & 0x3F);
+        utf8_len = 2;
+    } else if (codepoint < 0x10000) {
+        // 3-byte UTF-8
+        utf8_char[0] = 0xE0 | (codepoint >> 12);
+        utf8_char[1] = 0x80 | ((codepoint >> 6) & 0x3F);
+        utf8_char[2] = 0x80 | (codepoint & 0x3F);
+        utf8_len = 3;
+    } else if (codepoint < 0x110000) {
+        // 4-byte UTF-8
+        utf8_char[0] = 0xF0 | (codepoint >> 18);
+        utf8_char[1] = 0x80 | ((codepoint >> 12) & 0x3F);
+        utf8_char[2] = 0x80 | ((codepoint >> 6) & 0x3F);
+        utf8_char[3] = 0x80 | (codepoint & 0x3F);
+        utf8_len = 4;
+    } else {
+        // Invalid Unicode code point
+        return;
+    }
+
     size_t len = strlen(input->buffer);
 
     if (len < INPUT_BUFFER_LEN - 1) {

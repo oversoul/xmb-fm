@@ -179,6 +179,22 @@ bool add_new_line(FontAtlas *atlas) {
     return true;
 }
 
+void copy_bitmap_to_atlas(FT_Bitmap *bitmap, FontAtlas *atlas) {
+    int x = atlas->current_x;
+    int y = atlas->current_y;
+
+    // Ensure we don't write outside atlas bounds
+    if (x < 0 || y < 0 || x + bitmap->width > atlas->width || y + bitmap->rows > atlas->height) {
+        return;
+    }
+
+    for (int row = 0; row < bitmap->rows; row++) {
+        unsigned char *src_row = bitmap->buffer + row * bitmap->pitch;
+        unsigned char *dst_row = atlas->pixels + (y + row) * atlas->width + x;
+        memcpy(dst_row, src_row, bitmap->width);
+    }
+}
+
 int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint, int ft_point) {
     // Check if font_id is valid
     if (font_id < 0 || font_id >= atlas->font_count) {
@@ -310,15 +326,8 @@ int add_glyph_to_atlas(FontAtlas *atlas, int font_id, float size, int codepoint,
     glyph->used = true;
 
     // Copy bitmap to atlas
-    for (int j = 0; j < height; ++j) {
-        for (int i = 0; i < width; ++i) {
-            int atlas_x = glyph->x + i + (slot->bitmap_left < 0 ? -slot->bitmap_left : 0);
-            int atlas_y = glyph->y + j;
-            if (atlas_x < atlas->width && atlas_y < atlas->height) { // Safety check
-                atlas->pixels[atlas_y * atlas->width + atlas_x] = bitmap.buffer[j * bitmap.pitch + i];
-            }
-        }
-    }
+
+    copy_bitmap_to_atlas(&bitmap, atlas);
 
     atlas->current_x += effective_width + padding;
     atlas->dirty = true;
@@ -393,34 +402,6 @@ void draw_glyph(float cursor_x, float cursor_y, Color color, GlyphInfo *glyph, f
 void get_string_glyphs(FontAtlas *atlas, int font_id, float size, const char *text, GlyphInfo **glyphs, int *count) {
     if (!text || !glyphs || !count)
         return;
-
-    // // Count UTF-8 characters
-    // *count = 0;
-    // const char *p = text;
-    // while (*p) {
-    //     decode_utf8(&p);
-    //     (*count)++;
-    // }
-    //
-    // // Allocate glyph array
-    // *glyphs = (GlyphInfo *)malloc(*count * sizeof(GlyphInfo));
-    //
-    // // Process each character
-    // p = text;
-    // int idx = 0;
-    //
-    // while (*p) {
-    //     int codepoint = decode_utf8(&p);
-    //
-    //     // Get or add glyph
-    //     int glyph_idx = add_glyph_to_atlas(atlas, font_id, size, codepoint);
-    //     if (glyph_idx >= 0) {
-    //         (*glyphs)[idx++] = atlas->glyphs[glyph_idx];
-    //     }
-    // }
-    //
-    // *count = idx;
-    // update_atlas_texture(atlas);
 
     FontInfo *font = &atlas->fonts[font_id];
 
