@@ -1,5 +1,6 @@
 #pragma once
 
+#include "dialog.h"
 #include "input.h"
 #include "hr_list.h"
 #include "vr_list.h"
@@ -21,3 +22,4 @@ void draw_text_preview(DrawState *state);
 void draw_info(const VerticalList *vr_list, float width, float height);
 void draw_option_list(OptionList *op_list, DrawState *state);
 void draw_input_field(Input *input, const char *title, DrawState *state);
+void draw_dialog(Dialog *dialog, DrawState *state, const char *path);

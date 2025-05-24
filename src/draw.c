@@ -1,8 +1,6 @@
 #include "draw.h"
-#include "input.h"
 #include "ui.h"
-#include "hr_list.h"
-#include "vr_list.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -299,4 +297,55 @@ void draw_input_field(Input *input, const char *title, DrawState *state) {
     end_rect();
 
     draw_text(20, x, y + h / 2, input->buffer, (Color){0, 0, 0, 1});
+}
+
+void draw_dialog(Dialog *dialog, DrawState *state, const char *path) {
+    begin_rect(0, 0);
+    rect_size(state->width, state->height);
+    rect_color(0, 0, 0, .7);
+    end_rect();
+
+    begin_rect(0, 100);
+    rect_size(state->width, 1);
+    rect_color(1, 1, 1, .7);
+    end_rect();
+
+    begin_rect(0, state->height - 100);
+    rect_size(state->width, 1);
+    rect_color(1, 1, 1, .7);
+    end_rect();
+
+    float mid_width = state->width / 2.0;
+    float mid_height = state->height / 2.0;
+
+    use_font("sans");
+    float tw, th;
+    get_text_bounds(18, dialog->content, &tw, &th, NULL, NULL);
+    draw_text(18, state->width / 2.0 - tw / 2.0, mid_height - 80, dialog->content, (Color){1, 1, 1, 1});
+
+    float pw, ph;
+    get_text_bounds(18, path, &pw, &ph, NULL, NULL);
+    draw_text(18, state->width / 2.0 - pw / 2.0, mid_height - 50, path, (Color){1, 0, 0, 1});
+
+    float gap = 60;
+    float button_h = 40;
+    float button_w = 100;
+
+    begin_rect(mid_width + (button_w + gap) * dialog->position + gap / 2, mid_height);
+    rect_size(button_w, button_h);
+
+    rect_color(1, 1 + dialog->position, 1 + dialog->position, .3);
+    rect_radius_all(5);
+    end_rect();
+
+    float yw, yh;
+    get_text_bounds(18, "Yes", &yw, &yh, NULL, NULL);
+    float nw, nh;
+    get_text_bounds(18, "No", &nw, &nh, NULL, NULL);
+
+    float yx = mid_width - 0.5f * (button_w + gap + yw);
+    draw_text(18, yx, mid_height + yh, "Yes", (Color){1, 1, 1, 1});
+
+    float nx = mid_width + 0.5f * (button_w + gap) - 0.5f * nw;
+    draw_text(18, nx, mid_height + nh, "No", (Color){1, 1, 1, 1});
 }

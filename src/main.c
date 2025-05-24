@@ -12,6 +12,7 @@
 #define GL_GLEXT_PROTOTYPES
 #include <GLFW/glfw3.h>
 
+#include "dialog.h"
 #include "animation.h"
 #include "fm.h"
 #include "input.h"
@@ -38,6 +39,10 @@ Input create_dir_input;
 OptionList op_list;
 VerticalList vr_list;
 HorizontalList hr_list;
+
+Dialog delete_dialog = {
+    .content = "Are you sure you want to permanently delete this?",
+};
 
 Option options_items[] = {
     {.title = "Option 1"},
@@ -270,6 +275,24 @@ bool handle_input_entry_key(int key) {
     return false;
 }
 
+bool handle_dialog_entry_key(Dialog *dialog, int key) {
+    if (key == GLFW_KEY_ESCAPE) {
+        dialog_hide(dialog);
+    } else if (key == GLFW_KEY_ENTER) {
+        if (dialog->animation_target == -1) {
+            emit_signal(EVENT_CONFIRM_DELETE, NULL);
+        } else {
+            emit_signal(EVENT_REJECT_DELETE, NULL);
+        }
+        dialog_hide(dialog);
+    } else if (key == GLFW_KEY_LEFT) {
+        dialog_move_cursor_left(dialog);
+    } else if (key == GLFW_KEY_RIGHT) {
+        dialog_move_cursor_right(dialog);
+    }
+    return true;
+}
+
 void character_callback(GLFWwindow *window, unsigned int codepoint) {
     if (search_input.is_visible) {
         if (codepoint == '/')
@@ -295,6 +318,11 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
         if (key == GLFW_KEY_ESCAPE) {
             state.show_info = false;
         }
+        return;
+    }
+
+    if (delete_dialog.is_visible) {
+        handle_dialog_entry_key(&delete_dialog, key);
         return;
     }
 
@@ -333,7 +361,8 @@ void op_list_option_selected(Option *option) {
     } else if (strcmp(option->title, "New") == 0) {
         show_input(&create_dir_input);
     } else if (strcmp(option->title, "Delete") == 0) {
-        printf("DELETE\n");
+        fm->action_target_index = vr_list.selected; // Store target index
+        dialog_show(&delete_dialog);
     }
 }
 
@@ -446,6 +475,22 @@ void file_manager_event_handler(EventType type, void *context, void *data) {
             .items_count = fm->current_dir->child_count,
         };
         emit_signal(EVENT_DIRECTORY_CONTENT_CHANGED, &dir_data);
+    } else if (type == EVENT_CONFIRM_DELETE) {
+        if (!fm_delete_entry(fm)) {
+            printf("Couldn't delete directory.\n");
+            return;
+        }
+
+        DirectoryData dir_data = {
+            .selected = 0,
+            .depth = fm->depth,
+            .items = fm->current_dir->children,
+            .current_path = fm->current_dir->path,
+            .items_count = fm->current_dir->child_count,
+        };
+        emit_signal(EVENT_DIRECTORY_CONTENT_CHANGED, &dir_data);
+    } else if (type == EVENT_REJECT_DELETE) {
+        fm->action_target_index = -1;
     }
 }
 
@@ -521,6 +566,8 @@ int main() {
     connect_signal(EVENT_SEARCH, file_manager_event_handler, fm);
     connect_signal(EVENT_RENAME, file_manager_event_handler, fm);
     connect_signal(EVENT_CREATE_DIR, file_manager_event_handler, fm);
+    connect_signal(EVENT_CONFIRM_DELETE, file_manager_event_handler, fm);
+    connect_signal(EVENT_REJECT_DELETE, file_manager_event_handler, fm);
 
     ///////////////////////////////////////////
 
@@ -547,7 +594,9 @@ int main() {
 
         start_frame(width, height);
 
-        if (!state.show_info) {
+        if (delete_dialog.is_visible) {
+            draw_dialog(&delete_dialog, &state, fm->current_dir->children[vr_list.selected]->path);
+        } else if (!state.show_info) {
             draw_folder_path(&hr_list, fm->current_dir->path, 200, 160);
             draw_vertical_list(&vr_list, 180);
             draw_horizontal_menu(&hr_list, 180, 150);

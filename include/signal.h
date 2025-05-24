@@ -15,6 +15,8 @@ typedef enum {
     EVENT_SEARCH,                       // search for next item
     EVENT_RENAME,                       // rename current item
     EVENT_CREATE_DIR,                   // create new directory
+    EVENT_CONFIRM_DELETE,               // delete entry
+    EVENT_REJECT_DELETE,                // reject delete entry
 
     // State update events
     EVENT_DIRECTORY_CONTENT_CHANGED, // Directory contents changed

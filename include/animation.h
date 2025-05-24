@@ -6,6 +6,7 @@
 #include <string.h>
 
 typedef enum {
+    DialogTag,
     OptionListTag,
     VerticalListTag,
     HorizontalListTag,
