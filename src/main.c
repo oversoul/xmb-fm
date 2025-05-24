@@ -33,6 +33,8 @@ DrawState state = {0};
 FileManager *fm;
 Input search_input;
 Input rename_input;
+Input create_dir_input;
+
 OptionList op_list;
 VerticalList vr_list;
 HorizontalList hr_list;
@@ -51,6 +53,7 @@ Options options = {
 };
 
 Option root_items[] = {
+    {.title = "New"},         //
     {.title = "Cut"},         //
     {.title = "Copy"},        //
     {.title = "Rename"},      //
@@ -259,6 +262,11 @@ bool handle_input_entry_key(int key) {
         return true;
     }
 
+    if (create_dir_input.is_visible) {
+        handle_input_key(&create_dir_input, EVENT_CREATE_DIR, key);
+        return true;
+    }
+
     return false;
 }
 
@@ -271,6 +279,10 @@ void character_callback(GLFWwindow *window, unsigned int codepoint) {
         if (codepoint == '/')
             return;
         append_to_input(&rename_input, codepoint);
+    } else if (create_dir_input.is_visible) {
+        if (codepoint == '/')
+            return;
+        append_to_input(&create_dir_input, codepoint);
     }
 }
 
@@ -289,7 +301,7 @@ void handle_key(GLFWwindow *window, int key, int scancode, int action, int mods)
     if (handle_input_entry_key(key))
         return;
 
-    if (search_input.is_visible || rename_input.is_visible) {
+    if (search_input.is_visible || rename_input.is_visible || create_dir_input.is_visible) {
         return;
     }
 
@@ -318,6 +330,10 @@ void op_list_option_selected(Option *option) {
         fm->action_target_index = vr_list.selected; // Store target index
         set_buffer_input(&rename_input, fm->current_dir->children[vr_list.selected]->name);
         show_input(&rename_input);
+    } else if (strcmp(option->title, "New") == 0) {
+        show_input(&create_dir_input);
+    } else if (strcmp(option->title, "Delete") == 0) {
+        printf("DELETE\n");
     }
 }
 
@@ -414,6 +430,22 @@ void file_manager_event_handler(EventType type, void *context, void *data) {
         };
         emit_signal(EVENT_DIRECTORY_CONTENT_CHANGED, &dir_data);
         fm->action_target_index = -1;
+    } else if (type == EVENT_CREATE_DIR) {
+        char *dir_name = (char *)data;
+
+        if (!fm_create_dir(fm, dir_name)) {
+            printf("Couldn't create directory.\n");
+            return;
+        }
+
+        DirectoryData dir_data = {
+            .selected = 0,
+            .depth = fm->depth,
+            .items = fm->current_dir->children,
+            .current_path = fm->current_dir->path,
+            .items_count = fm->current_dir->child_count,
+        };
+        emit_signal(EVENT_DIRECTORY_CONTENT_CHANGED, &dir_data);
     }
 }
 
@@ -488,6 +520,7 @@ int main() {
     connect_signal(EVENT_ITEM_ACTIVATED, file_manager_event_handler, fm);
     connect_signal(EVENT_SEARCH, file_manager_event_handler, fm);
     connect_signal(EVENT_RENAME, file_manager_event_handler, fm);
+    connect_signal(EVENT_CREATE_DIR, file_manager_event_handler, fm);
 
     ///////////////////////////////////////////
 
@@ -525,6 +558,7 @@ int main() {
 
             draw_input_field(&search_input, "Search", &state);
             draw_input_field(&rename_input, "Rename", &state);
+            draw_input_field(&create_dir_input, "New Dir", &state);
         } else {
             draw_info(&vr_list, state.width, state.height);
         }

@@ -62,4 +62,7 @@ bool get_mime_type(const char *path, const char *test);
 void open_file(const char *path);
 void read_file_content(const char *filename, char *buffer, size_t len);
 int search_file_name(FileManager *fm, const char *keyword);
+
 bool fm_rename(FileManager *fm, const char *new_name);
+bool fm_create_dir(FileManager *fm, const char *name);
+bool fm_delete_entry(FileManager *fm);

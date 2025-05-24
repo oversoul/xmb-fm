@@ -14,6 +14,7 @@ typedef enum {
     EVENT_ITEM_ACTIVATED,               // Item was activated (enter pressed)
     EVENT_SEARCH,                       // search for next item
     EVENT_RENAME,                       // rename current item
+    EVENT_CREATE_DIR,                   // create new directory
 
     // State update events
     EVENT_DIRECTORY_CONTENT_CHANGED, // Directory contents changed

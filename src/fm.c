@@ -92,7 +92,6 @@ static void sort_entries(FileManager *fm) {
 }
 
 static void load_entry_info(const char *path, FileEntry *entry) {
-
     struct stat st;
     if (stat(path, &st) == 0) {
         entry->size = st.st_size;
@@ -399,4 +398,57 @@ bool fm_rename(FileManager *fm, const char *new_name) {
         return true;
     }
     return false;
+}
+
+bool fm_create_dir(FileManager *fm, const char *name) {
+    struct file_entry *current = fm->current_dir;
+    size_t len = strlen(current->path) + strlen(name) + 2;
+    char target[len];
+    snprintf(target, len, "%s/%s", current->path, name);
+    target[len] = 0;
+
+    bool ret = mkdir(target, 0700) == 0;
+    read_directory(current);
+    return ret;
+}
+
+static bool delete_path(FileManager *fm, const char *path) {
+    DIR *dir = opendir(path);
+    if (!dir) {
+        return remove(path) == 0; // Try to remove if it's not a directory
+    }
+
+    struct dirent *entry;
+    char fullpath[1024];
+
+    while ((entry = readdir(dir))) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
+
+        snprintf(fullpath, sizeof(fullpath), "%s/%s", path, entry->d_name);
+
+        struct stat statbuf;
+        if (stat(fullpath, &statbuf) == 0) {
+            if (S_ISDIR(statbuf.st_mode)) {
+                delete_path(fm, fullpath); // Recurse into subdir
+            } else {
+                remove(fullpath); // Delete file
+            }
+        }
+    }
+
+    closedir(dir);
+    return remove(path) == 0;
+}
+
+bool fm_delete_entry(FileManager *fm) {
+    if (fm->action_target_index == -1) {
+        fprintf(stderr, "No target index\n");
+        return false;
+    }
+
+    struct file_entry *current = fm->current_dir->children[fm->action_target_index];
+    bool ret = delete_path(fm, current->path);
+    read_directory(fm->current_dir);
+    return ret;
 }
